@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Мой темп</string>
+    <string name="pace_label">ТЕМП</string>
+    <string name="pace_unit">мин/км</string>
+    <string name="StartButton">Старт</string>
+    <string name="StopButton">Стоп</string>
+    <string name="SaveButton">Сохранить</string>
+    <string name="Accuracy">Точность: %1$.1f м</string>
+    <string name="status_perfect">ОТЛИЧНО</string>
+    <string name="status_average">СРЕДНЕ</string>
+    <string name="status_weak">ПЛОХО</string>
+    <string name="status_ready">ЖДУ СТАРТ"</string>
+    <string name="settingHeader">Параметры приложения</string>
+</resources>
