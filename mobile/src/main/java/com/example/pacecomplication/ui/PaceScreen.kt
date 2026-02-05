@@ -14,12 +14,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.pacecomplication.ActivityMode
 import com.example.pacecomplication.LocationRepository
+import com.example.pacecomplication.WorkoutState
+import com.example.pacecomplication.WorkoutTimer
 
 
 /**
@@ -91,19 +94,33 @@ fun PaceScreen(
     // Используется для определения качества сигнала и цветового статуса.
     val accuracy by LocationRepository.currentGPSAccuracy.collectAsState(initial = 0F)
 
+    val trainingTimer = WorkoutTimer()
+    val timeMs by LocationRepository.trainingTimeMs.collectAsState(0)
+    val time =  trainingTimer.formatTimer(timeMs)
     // Текущий режим активности (бег / ходьба)
     // Далее преобразуется в простой UI-флаг.
-    val isWalking by LocationRepository.activityMode.collectAsState()
+
+    val workoutState by LocationRepository.workoutState.collectAsState()
+    val isSaveEnabled = workoutState == WorkoutState.ACTIVE && timeMs > 0
+
+     val activityMode by LocationRepository.activityMode.collectAsState()
+    val isWalking = activityMode == ActivityMode.WALKING
+
+    val isModeChangeLocked = workoutState == WorkoutState.ACTIVE
+
 
 
     PaceAppShell(
         pace = pace,
         accuracy = accuracy,
-        isWalking = isWalking == ActivityMode.RUNNING,
+        time = time,
+        isWalking = isWalking,
+        isModeChangeLocked = isModeChangeLocked, // Передаем флаг блокировки отдельно
         onStartClick = onStartClick,
         onStopClick = onStopClick,
         onSaveClick = onSaveClick,
-        onModeChanged = onModeChanged
+        onModeChanged = onModeChanged,
+        isSaveEnabled = isSaveEnabled
     )
 }
 
@@ -139,7 +156,10 @@ fun PaceScreen(
 fun PaceAppShell(
     pace: String,
     accuracy: Float,
+    time: String,
     isWalking: Boolean,
+    isModeChangeLocked: Boolean, // Добавляем новый параметр
+    isSaveEnabled: Boolean,
     onStartClick: () -> Unit,
     onStopClick: () -> Unit,
     onSaveClick: () -> Unit,
@@ -168,8 +188,11 @@ fun PaceAppShell(
             navController = navController,
             modifier = Modifier.padding(innerPadding),
             pace = pace,
+            time = time,
             accuracy = accuracy,
             isWalking = isWalking,
+            isModeChangeLocked = isModeChangeLocked, // Пробрасываем дальше
+            isSaveEnabled = isSaveEnabled,
             onStartClick = onStartClick,
             onStopClick = onStopClick,
             onSaveClick = onSaveClick,
@@ -275,7 +298,7 @@ fun BottomBar(
  */
 @Composable
 fun AppNavHost(
-    navController: androidx.navigation.NavHostController,
+    navController: NavHostController,
     modifier: Modifier = Modifier,
     pace: String,
     accuracy: Float,
@@ -284,6 +307,9 @@ fun AppNavHost(
     onStopClick: () -> Unit,
     onSaveClick: () -> Unit,
     onModeChanged: () -> Unit,
+    time: String,
+    isModeChangeLocked: Boolean,
+    isSaveEnabled: Boolean,
 ) {
     // NavHost — контейнер, который отображает экран согласно текущему route
     NavHost(
@@ -296,7 +322,10 @@ fun AppNavHost(
             // Главный экран тренировки
             TrainingScreen(
                 pace = pace,
+                isModeChangeLocked = isModeChangeLocked,
+                isSaveEnabled = isSaveEnabled,
                 accuracy = accuracy,
+                time = time,
                 isWalking = isWalking,
                 onModeChanged = onModeChanged,
                 onStartClick = onStartClick,

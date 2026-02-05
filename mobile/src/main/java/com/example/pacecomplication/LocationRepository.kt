@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 
-
 /**
  * ActivityMode — режим активности для расчёта темпа.
  *
@@ -21,6 +20,15 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 enum class ActivityMode { WALKING, RUNNING }
 
+data class PaceUpdate(
+    val paceValue: Double,   // для лога (например instant или ema)
+    val paceText: String     // для уведомления
+)
+
+enum class WorkoutState {
+    IDLE,
+    ACTIVE
+}
 
 /**
  * LocationRepository — центральное хранилище состояния трекинга и логики расчёта темпа.
@@ -43,10 +51,8 @@ enum class ActivityMode { WALKING, RUNNING }
  */
 object LocationRepository {
 
-
-
-
     private const val TAG = "PACE_DEBUG"
+
     // Пороги (теперь это константы, а не переменные)
     // STOP_THRESHOLD — ниже этой скорости считаем, что стоим
     // ACC_BAD_THRESHOLD — точность хуже этого значения считаем шумом (значение отбрасываем)
@@ -69,10 +75,19 @@ object LocationRepository {
     private val _isTracking = MutableStateFlow(false)
     val isTracking = _isTracking.asStateFlow()
 
+      private val _workoutState = MutableStateFlow(WorkoutState.IDLE)
+    val workoutState = _workoutState.asStateFlow()
+
     private val _currentGPSAccuracy = MutableStateFlow(0f)
     val currentGPSAccuracy = _currentGPSAccuracy.asStateFlow()
 
+
+    val MyTimer = PaceTimer()
+
+    val trainingTimeMs = MyTimer.trainingTimeMs
+
     private var emaPace: Double = 0.0
+
 
     // Клиент Wear OS (инициализируем лениво, чтобы не передавать контекст в каждый метод)
     @SuppressLint("StaticFieldLeak")
@@ -104,6 +119,8 @@ object LocationRepository {
      */
     fun startTracking() {
         _isTracking.value = true
+        _workoutState.value = WorkoutState.ACTIVE
+        MyTimer.start()
         emaPace = 0.0
     }
 
@@ -117,7 +134,16 @@ object LocationRepository {
     fun stopTracking() {
         _isTracking.value = false
         _currentGPSAccuracy.value = 0f
+        MyTimer.stop()
     }
+
+    fun saveTracking() {
+        stopTracking()
+        MyTimer.reset()
+        _workoutState.value = WorkoutState.IDLE
+
+    }
+
 
     /**
      * Переключает режим активности (RUNNING <-> WALKING).
@@ -130,13 +156,13 @@ object LocationRepository {
      * - сбрасывается EMA-фильтр (сглаживание начинается заново)
      */
     fun changeMod() {
-        if (!_isTracking.value) {
+        if (_workoutState.value == WorkoutState.IDLE) {
             _activityMode.value = if (_activityMode.value == ActivityMode.RUNNING) {
                 ActivityMode.WALKING
             } else {
                 ActivityMode.RUNNING
             }
-            emaPace = 0.0 // Сбрасываем фильтр при смене режима
+            emaPace = 0.0
             Log.d(TAG, "Режим изменен на: ${_activityMode.value}")
         }
     }
@@ -154,26 +180,32 @@ object LocationRepository {
      *
      * @param location новая GPS-точка от FusedLocationProvider
      */
-    fun updatePace(location: Location): Double? {
+    fun updatePace(location: Location): PaceUpdate? {
 
         // Игнорируем точки, если запись не активна
         if (!_isTracking.value) return null
 
         _currentGPSAccuracy.value = location.accuracy
 
-        // Фильтрация
-        val instantPace = processLocationToPace(location)
+        val instantPace = processLocationToPace(location) ?: return null
 
-        if (instantPace != null) {
-            emaPace = applyEmaFilter(instantPace, location.accuracy)
-            val paceString = formatPace(emaPace)
+        emaPace = applyEmaFilter(instantPace, location.accuracy)
+        val paceString = formatPace(emaPace)
 
-            _currentPace.value = paceString
-            sendPaceToWatch(paceString)
+        _currentPace.value = paceString
+        sendPaceToWatch(paceString)
 
-            Log.d(TAG, "SPD: ${"%.2f".format(location.speed)} | PACE: $paceString")
-        }
-        return  instantPace
+
+
+
+        Log.d(TAG, "SPD: ${"%.2f".format(location.speed)} | PACE: $paceString")
+
+        // 1) для лога число (тут выбрал emaPace, но можешь вернуть instantPace)
+        // 2) для уведомления строка
+        return PaceUpdate(
+            paceValue = emaPace,
+            paceText = paceString
+        )
     }
 
 
@@ -233,13 +265,13 @@ object LocationRepository {
             when {
                 acc > 25f -> 0.05
                 acc > 10f -> 0.15
-                else      -> 0.40
+                else -> 0.40
             }
         } else {
             when {
                 acc > 25f -> 0.10
                 acc > 10f -> 0.30
-                else      -> 0.65
+                else -> 0.65
             }
         }
     }
@@ -276,4 +308,6 @@ object LocationRepository {
             client.putDataItem(putDataReq)
         }
     }
+
+
 }

@@ -11,8 +11,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -30,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pacecomplication.ActivityMode
 import com.example.pacecomplication.LocationRepository
 import com.example.pacecomplication.R
 
@@ -68,8 +74,9 @@ import com.example.pacecomplication.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModeSelector(
-    isWalking: Boolean,
-    onModeChanged: () -> Unit
+    isWalking:Boolean ,
+    onModeChanged: () -> Unit,
+    isModeChangeLocked: Boolean,
 ) {
     val options = listOf("БЕГ", "ХОДЬБА")
 
@@ -92,7 +99,8 @@ fun ModeSelector(
                     if (!isThisSelected) onModeChanged()
                 },
                 selected = isThisSelected,
-                label = { Text(label, fontWeight = FontWeight.Bold) }
+                label = { Text(label, fontWeight = FontWeight.Bold) },
+                enabled = !isModeChangeLocked
             )
         }
     }
@@ -166,18 +174,19 @@ fun getSignalStatus(accuracy: Float): SignalStatus {
 fun TrainingScreen(
     pace: String,
     accuracy: Float,
+    time: String,
     isWalking: Boolean,
     onModeChanged: () -> Unit,
     onStartClick: () -> Unit,
     onStopClick: () -> Unit,
     onSaveClick: () -> Unit,
+    isModeChangeLocked: Boolean,
+    isSaveEnabled: Boolean,
 ) {
     // Определяем визуальный статус GPS-сигнала (цвет + текст)
     val status = getSignalStatus(accuracy)
 
-    // Состояние трекинга используется для блокировки кнопок
-    val isTracking by LocationRepository.isTracking.collectAsState(initial = false)
-
+    val isTracking by LocationRepository.isTracking.collectAsState()
     Surface(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
 
 
@@ -191,7 +200,15 @@ fun TrainingScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             // Переключение режима (БЕГ/ХОДЬБА)
-            ModeSelector(isWalking = isWalking, onModeChanged = onModeChanged)
+            ModeSelector(
+                isWalking = isWalking,
+                onModeChanged = onModeChanged,
+                isModeChangeLocked = isModeChangeLocked
+            )
+
+            Spacer(Modifier.weight(1f))
+
+            WorkoutStatsBlock(time)
 
             Spacer(Modifier.weight(1f))
 
@@ -209,7 +226,8 @@ fun TrainingScreen(
                 isTracking = isTracking,
                 onStartClick = onStartClick,
                 onStopClick = onStopClick,
-                onSaveClick = onSaveClick
+                onSaveClick = onSaveClick,
+                isSaveEnabled = isSaveEnabled
             )
 
             Spacer(Modifier.weight(1f))
@@ -281,6 +299,43 @@ fun PaceStatusBlock(
 }
 
 
+@Composable
+fun WorkoutStatsBlock(
+    time: String,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(vertical = 14.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Timer,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(Modifier.height(4.dp))
+
+            Text(
+                text = time,
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+
 /**
  * ControlButtons — набор кнопок управления трекингом.
  *
@@ -300,6 +355,7 @@ fun ControlButtons(
     onStartClick: () -> Unit,
     onStopClick: () -> Unit,
     onSaveClick: () -> Unit,
+    isSaveEnabled: Boolean,
 ) {
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -332,7 +388,7 @@ fun ControlButtons(
 
         Button(
             onClick = onSaveClick,
-            enabled = isTracking,
+            enabled = isSaveEnabled,
             modifier = Modifier
                 .width(IntrinsicSize.Min)
                 .weight(1f)
@@ -351,11 +407,14 @@ fun PreviewTrainingGood() {
         TrainingScreen(
             pace = "5:40",
             accuracy = 3F,
+            time = "12:23",
             isWalking = true,
             onModeChanged = {},
             onStartClick = {},
             onStopClick = {},
-            onSaveClick = {}
+            onSaveClick = {},
+            isModeChangeLocked = true,
+            isSaveEnabled = true
         )
     }
 }

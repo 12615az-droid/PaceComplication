@@ -1,4 +1,5 @@
 package com.example.pacecomplication
+
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -12,9 +13,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.example.pacecomplication.ui.PaceScreen
 import com.example.pacecomplication.ui.RunningAppTheme
-
-
-
 
 
 /**
@@ -51,8 +49,6 @@ class MainActivity : ComponentActivity() {
     }
 
 
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -64,10 +60,10 @@ class MainActivity : ComponentActivity() {
                     // Передаём в UI только события управления.
                     // Сама Activity решает: запросить разрешения, запустить/остановить сервис и т.д.
                     PaceScreen(
-                        onStartClick= { requestPacePermissions() },
+                        onStartClick = { requestPacePermissions() },
                         onStopClick = { stopPaceService() },
-                                onSaveClick = { /* пока заглушка */},
-                        onModeChanged = { changeMod()}
+                        onSaveClick = { savePaceService() },
+                        onModeChanged = { changeMod() }
 
                     )
                 }
@@ -106,7 +102,7 @@ class MainActivity : ComponentActivity() {
     /**
      * Переключает режим активности (бег/ходьба) через LocationRepository.
      */
-    private  fun changeMod(){
+    private fun changeMod() {
         LocationRepository.changeMod()
 
     }
@@ -120,6 +116,12 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("ImplicitSamInstance")
     private fun stopPaceService() {
         stopService(Intent(this, LocationService::class.java))
+        LocationRepository.stopTracking()
+    }
+
+
+    private fun savePaceService() {
+        LocationRepository.saveTracking()
         LocationRepository.stopTracking()
     }
 

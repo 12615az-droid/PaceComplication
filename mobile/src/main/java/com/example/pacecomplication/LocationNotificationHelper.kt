@@ -4,6 +4,8 @@ import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.support.v4.media.session.MediaSessionCompat
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 
 
 import androidx.core.app.NotificationCompat
@@ -69,7 +71,7 @@ class LocationNotificationHelper(private val context: Context) {
      *
      * @return Notification для использования в startForeground()
      */
-    fun getNotification(): Notification {
+    fun getNotification(pace: String?): Notification {
         // Клик по уведомлению открывает MainActivity
         val intent = Intent(context, MainActivity::class.java)
         val pendingIntent =
@@ -82,9 +84,11 @@ class LocationNotificationHelper(private val context: Context) {
         // OnlyAlertOnce — не "пикает" при обновлениях.
         // Ongoing — нельзя смахнуть, пока идёт трекинг (foreground service).
         // MediaStyle — отображает кнопки действий как у музыкального плеера.
+
+        val contentText = buildNotificationText(pace)
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle("Pace Tracker")
-            .setContentText("Идет сбор телеметрии")
+            .setContentText(contentText)
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setContentIntent(pendingIntent)
             .setOnlyAlertOnce(true)
@@ -116,5 +120,12 @@ class LocationNotificationHelper(private val context: Context) {
         mediaSession?.release()
         mediaSession = null
     }
+
+
 }
+
+
+private fun buildNotificationText(paceMinPerKm: String?): String="Темп: ${paceMinPerKm}км"
+
+
 

@@ -43,6 +43,11 @@ class LocationService : Service() {
     // Отладочный логгер телеметрии (Logcat + файл)
     private lateinit var logger: TelemetryLogger
 
+    private val paceTimer = PaceTimer()
+
+
+
+
 
 
     /**
@@ -78,11 +83,19 @@ class LocationService : Service() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 for (location in locationResult.locations) {
-                    val pace = LocationRepository.updatePace(location)
-                    logger.log("SmoothPACE: $pace | ACC: ${location.accuracy}")
+                    val paceTwo = LocationRepository.updatePace(location)
+
+                    logger.log("SmoothPACE: ${paceTwo?.paceValue} | ACC: ${location.accuracy}")
+                    updateForegroundNotification(paceTwo?.paceText)
                 }
             }
         }
+    }
+
+    private fun updateForegroundNotification(pace: String?) {
+        val notification = notificationHelper.getNotification(pace)
+        val nm = getSystemService(NotificationManager::class.java)
+        nm.notify(LocationNotificationHelper.NOTIFICATION_ID, notification)
     }
 
     /**
@@ -96,7 +109,7 @@ class LocationService : Service() {
      * - система может перезапустить сервис после убийства процесса
      */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val notification = notificationHelper.getNotification()
+        val notification = notificationHelper.getNotification("0")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(LocationNotificationHelper.NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
@@ -134,6 +147,7 @@ class LocationService : Service() {
         fusedLocationClient.removeLocationUpdates(locationCallback)
         // Освобождаем MediaSession, чтобы не держать системные ресурсы
         notificationHelper.destroyMediaSession()
+        paceTimer.shutdown()
 
 
     }
