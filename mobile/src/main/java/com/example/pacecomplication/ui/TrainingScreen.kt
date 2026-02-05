@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.sp
 import com.example.pacecomplication.ActivityMode
 import com.example.pacecomplication.LocationRepository
 import com.example.pacecomplication.R
+import com.example.pacecomplication.WorkoutState
+import com.example.pacecomplication.WorkoutTimer
 
 
 /**
@@ -172,21 +174,12 @@ fun getSignalStatus(accuracy: Float): SignalStatus {
 
 @Composable
 fun TrainingScreen(
-    pace: String,
-    accuracy: Float,
-    time: String,
-    isWalking: Boolean,
-    onModeChanged: () -> Unit,
-    onStartClick: () -> Unit,
-    onStopClick: () -> Unit,
-    onSaveClick: () -> Unit,
-    isModeChangeLocked: Boolean,
-    isSaveEnabled: Boolean,
+    state: TrainingUiState,
+    actions: TrainingActions,
 ) {
     // Определяем визуальный статус GPS-сигнала (цвет + текст)
-    val status = getSignalStatus(accuracy)
-
-    val isTracking by LocationRepository.isTracking.collectAsState()
+    val status = getSignalStatus(state.accuracy)
+    val workTime = WorkoutTimer()
     Surface(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
 
 
@@ -201,21 +194,21 @@ fun TrainingScreen(
 
             // Переключение режима (БЕГ/ХОДЬБА)
             ModeSelector(
-                isWalking = isWalking,
-                onModeChanged = onModeChanged,
-                isModeChangeLocked = isModeChangeLocked
+                isWalking = state.isWalking,
+                onModeChanged = actions.onToggleMode,
+                isModeChangeLocked = state.isModeChangeLocked
             )
 
             Spacer(Modifier.weight(1f))
 
-            WorkoutStatsBlock(time)
+            WorkoutStatsBlock(workTime.formatTimer(state.timeMs))
 
             Spacer(Modifier.weight(1f))
 
             // Темп + точность + бейдж (визуальный статус сигнала)
             PaceStatusBlock(
-                pace = pace,
-                accuracy = accuracy,
+                pace = state.pace,
+                accuracy = state.accuracy,
                 status = status
             )
 
@@ -223,11 +216,12 @@ fun TrainingScreen(
 
             // Кнопки управления трекингом
             ControlButtons(
-                isTracking = isTracking,
-                onStartClick = onStartClick,
-                onStopClick = onStopClick,
-                onSaveClick = onSaveClick,
-                isSaveEnabled = isSaveEnabled
+                isTracking = (state.workoutState == WorkoutState.ACTIVE)
+                            && LocationRepository.isTracking.collectAsState().value,
+                onStartClick = actions.onStart,
+                onStopClick = actions.onStop,
+                onSaveClick = actions.onSave,
+                isSaveEnabled = state.isSaveEnabled
             )
 
             Spacer(Modifier.weight(1f))
@@ -405,16 +399,14 @@ fun ControlButtons(
 fun PreviewTrainingGood() {
     MaterialTheme {
         TrainingScreen(
-            pace = "5:40",
-            accuracy = 3F,
-            time = "12:23",
-            isWalking = true,
-            onModeChanged = {},
-            onStartClick = {},
-            onStopClick = {},
-            onSaveClick = {},
-            isModeChangeLocked = true,
-            isSaveEnabled = true
+state = TrainingUiState(
+                pace = "5:40",
+                accuracy = 3f,
+                timeMs = 1751111,
+                mode = ActivityMode.WALKING,
+                workoutState = WorkoutState.ACTIVE
+            )
+            ,TrainingActions({},{},{},{},)
         )
     }
 }

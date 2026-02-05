@@ -46,6 +46,24 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
 /* Список вкладок, которые показываем в NavigationBar (внизу) */
 private val bottomItems = listOf(Screen.Training, Screen.History, Screen.Settings)
 
+data class TrainingUiState(
+    val pace: String,
+    val accuracy: Float,
+    val timeMs: Long,
+    val mode: ActivityMode,
+    val workoutState: WorkoutState,
+) {
+    val isWalking: Boolean get() = mode == ActivityMode.WALKING
+    val isModeChangeLocked: Boolean get() = workoutState == WorkoutState.ACTIVE
+    val isSaveEnabled: Boolean get() = workoutState == WorkoutState.ACTIVE && timeMs > 0
+}
+
+data class TrainingActions(
+    val onStart: () -> Unit,
+    val onStop: () -> Unit,
+    val onSave: () -> Unit,
+    val onToggleMode: () -> Unit, // оставляем твой toggle, раз тебе так удобно
+)
 
 
 /**
@@ -86,85 +104,68 @@ fun PaceScreen(
     onModeChanged: () -> Unit
 ) {
 
-    // Текущий темп.
-    // Формат строки уже подготовлен для отображения в UI (мм:сс).
     val pace by LocationRepository.currentPace.collectAsState(initial = "0:00")
-
-    // Текущая точность GPS в метрах.
-    // Используется для определения качества сигнала и цветового статуса.
-    val accuracy by LocationRepository.currentGPSAccuracy.collectAsState(initial = 0F)
-
-    val trainingTimer = WorkoutTimer()
-    val timeMs by LocationRepository.trainingTimeMs.collectAsState(0)
-    val time =  trainingTimer.formatTimer(timeMs)
-    // Текущий режим активности (бег / ходьба)
-    // Далее преобразуется в простой UI-флаг.
-
+    val accuracy by LocationRepository.currentGPSAccuracy.collectAsState(initial = 0f)
+    val timeMs by LocationRepository.trainingTimeMs.collectAsState(initial = 0L)
+    val mode by LocationRepository.activityMode.collectAsState()
     val workoutState by LocationRepository.workoutState.collectAsState()
-    val isSaveEnabled = workoutState == WorkoutState.ACTIVE && timeMs > 0
 
-     val activityMode by LocationRepository.activityMode.collectAsState()
-    val isWalking = activityMode == ActivityMode.WALKING
 
-    val isModeChangeLocked = workoutState == WorkoutState.ACTIVE
+
+    val state = TrainingUiState(
+        pace = pace,
+        accuracy = accuracy,
+        timeMs = timeMs,
+        mode = mode,
+        workoutState = workoutState
+    )
+
+    val actions = TrainingActions(
+        onStart = onStartClick,
+        onStop = onStopClick,
+        onSave = onSaveClick,
+        onToggleMode = onModeChanged
+    )
 
 
 
     PaceAppShell(
-        pace = pace,
-        accuracy = accuracy,
-        time = time,
-        isWalking = isWalking,
-        isModeChangeLocked = isModeChangeLocked, // Передаем флаг блокировки отдельно
-        onStartClick = onStartClick,
-        onStopClick = onStopClick,
-        onSaveClick = onSaveClick,
-        onModeChanged = onModeChanged,
-        isSaveEnabled = isSaveEnabled
+        state,
+        actions
     )
 }
 
 
 /**
-* PaceAppShell — основной UI-каркас приложения.
-*
-* Назначение:
-* - создаёт и хранит NavController
-* - задаёт Scaffold (контейнер всего экрана)
-* - отображает нижнюю панель навигации
-* - переключает экраны через NavHost
-*
-* Ответственность:
-* - управление структурой экранов
-* - навигация между вкладками (Training / History / Settings)
-*
-* Важно:
-* - бизнес-логики здесь нет
-* - данные и события приходят извне
-* - визуальные экраны подключаются через NavHost
-*
-* Параметры:
-* @param pace        текущий темп для экрана тренировки
-* @param accuracy    точность GPS (метры)
-* @param isWalking   флаг режима активности (по текущему неймингу проекта)
-* @param onStartClick  обработчик кнопки "Старт"
-* @param onStopClick   обработчик кнопки "Стоп"
-* @param onSaveClick   обработчик кнопки "Сохранить"
-* @param onModeChanged обработчик смены режима (бег / ходьба)
-*/
+ * PaceAppShell — основной UI-каркас приложения.
+ *
+ * Назначение:
+ * - создаёт и хранит NavController
+ * - задаёт Scaffold (контейнер всего экрана)
+ * - отображает нижнюю панель навигации
+ * - переключает экраны через NavHost
+ *
+ * Ответственность:
+ * - управление структурой экранов
+ * - навигация между вкладками (Training / History / Settings)
+ *
+ * Важно:
+ * - бизнес-логики здесь нет
+ * - данные и события приходят извне
+ * - визуальные экраны подключаются через NavHost
+ *
+ * Параметры:
+ * @param pace        текущий темп для экрана тренировки
+ * @param accuracy    точность GPS (метры)
+ * @param isWalking   флаг режима активности (по текущему неймингу проекта)
+ * @param onStartClick  обработчик кнопки "Старт"
+ * @param onStopClick   обработчик кнопки "Стоп"
+ * @param onSaveClick   обработчик кнопки "Сохранить"
+ * @param onModeChanged обработчик смены режима (бег / ходьба)
+ */
 @Composable
 fun PaceAppShell(
-    pace: String,
-    accuracy: Float,
-    time: String,
-    isWalking: Boolean,
-    isModeChangeLocked: Boolean, // Добавляем новый параметр
-    isSaveEnabled: Boolean,
-    onStartClick: () -> Unit,
-    onStopClick: () -> Unit,
-    onSaveClick: () -> Unit,
-    onModeChanged: () -> Unit,
-) {
+    state: TrainingUiState, actions: TrainingActions) {
     // Контроллер навигации между экранами нижнего меню
     val navController = rememberNavController()
 
@@ -181,22 +182,14 @@ fun PaceAppShell(
     ) {
         // innerPadding учитывает высоту нижней навигации
         // и предотвращает перекрытие контента
-        innerPadding ->
+            innerPadding ->
 
         // NavHost — точка переключения экранов приложения
         AppNavHost(
             navController = navController,
             modifier = Modifier.padding(innerPadding),
-            pace = pace,
-            time = time,
-            accuracy = accuracy,
-            isWalking = isWalking,
-            isModeChangeLocked = isModeChangeLocked, // Пробрасываем дальше
-            isSaveEnabled = isSaveEnabled,
-            onStartClick = onStartClick,
-            onStopClick = onStopClick,
-            onSaveClick = onSaveClick,
-            onModeChanged = onModeChanged
+            state =state,
+            actions = actions
         )
     }
 }
@@ -300,16 +293,8 @@ fun BottomBar(
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    pace: String,
-    accuracy: Float,
-    isWalking: Boolean,
-    onStartClick: () -> Unit,
-    onStopClick: () -> Unit,
-    onSaveClick: () -> Unit,
-    onModeChanged: () -> Unit,
-    time: String,
-    isModeChangeLocked: Boolean,
-    isSaveEnabled: Boolean,
+    state: TrainingUiState,
+    actions: TrainingActions,
 ) {
     // NavHost — контейнер, который отображает экран согласно текущему route
     NavHost(
@@ -321,16 +306,8 @@ fun AppNavHost(
         composable(Screen.Training.route) {
             // Главный экран тренировки
             TrainingScreen(
-                pace = pace,
-                isModeChangeLocked = isModeChangeLocked,
-                isSaveEnabled = isSaveEnabled,
-                accuracy = accuracy,
-                time = time,
-                isWalking = isWalking,
-                onModeChanged = onModeChanged,
-                onStartClick = onStartClick,
-                onStopClick = onStopClick,
-                onSaveClick = onSaveClick
+                state = state,
+                actions = actions
             )
         }
 
