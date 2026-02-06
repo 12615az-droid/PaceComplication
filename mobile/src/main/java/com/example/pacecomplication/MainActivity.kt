@@ -115,14 +115,19 @@ class MainActivity : ComponentActivity() {
      */
     @SuppressLint("ImplicitSamInstance")
     private fun stopPaceService() {
-        stopService(Intent(this, LocationService::class.java))
         LocationRepository.stopTracking()
+        stopService(Intent(this, LocationService::class.java))
+        LocationNotificationHelper(this).showNotification(
+            LocationRepository.currentPace.value
+        )
     }
 
 
     private fun savePaceService() {
         LocationRepository.saveTracking()
-        LocationRepository.stopTracking()
+        stopService(Intent(this, LocationService::class.java))
+        LocationNotificationHelper(this).cancelNotification()
+
     }
 
 }

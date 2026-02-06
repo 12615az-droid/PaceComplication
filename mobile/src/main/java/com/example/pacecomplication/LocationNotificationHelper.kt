@@ -110,6 +110,19 @@ class LocationNotificationHelper(private val context: Context) {
             .build()
     }
 
+
+    fun cancelNotification() {
+        val manager = context.getSystemService(NotificationManager::class.java)
+        manager.cancel(NOTIFICATION_ID)
+    }
+
+
+    fun showNotification(pace: String?) {
+        val notification = getNotification(pace)
+        val manager = context.getSystemService(NotificationManager::class.java)
+        manager.notify(NOTIFICATION_ID, notification)
+    }
+
     /**
      * Освобождает MediaSession.
      *
@@ -125,7 +138,10 @@ class LocationNotificationHelper(private val context: Context) {
 }
 
 
-private fun buildNotificationText(paceMinPerKm: String?): String="Темп: ${paceMinPerKm}км"
+private fun buildNotificationText(paceMinPerKm: String?): String {
+    val paceText = paceMinPerKm?.takeIf { it.isNotBlank() } ?: "--:--"
+    return "Темп: $paceText/км"
+}
 
 
 

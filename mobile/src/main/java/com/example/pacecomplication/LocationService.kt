@@ -93,6 +93,7 @@ class LocationService : Service() {
     }
 
     private fun updateForegroundNotification(pace: String?) {
+         if (pace.isNullOrBlank()) return
         val notification = notificationHelper.getNotification(pace)
         val nm = getSystemService(NotificationManager::class.java)
         nm.notify(LocationNotificationHelper.NOTIFICATION_ID, notification)
@@ -109,7 +110,7 @@ class LocationService : Service() {
      * - система может перезапустить сервис после убийства процесса
      */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val notification = notificationHelper.getNotification("0")
+        val notification = notificationHelper.getNotification("0:00")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(LocationNotificationHelper.NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
@@ -142,6 +143,7 @@ class LocationService : Service() {
      * - освободить MediaSession в уведомлении
      */
     override fun onDestroy() {
+        stopForeground(STOP_FOREGROUND_DETACH)
         super.onDestroy()
         // Останавливаем обновления координат
         fusedLocationClient.removeLocationUpdates(locationCallback)

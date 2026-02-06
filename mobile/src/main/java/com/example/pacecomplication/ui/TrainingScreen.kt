@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
@@ -76,7 +78,7 @@ import com.example.pacecomplication.WorkoutTimer
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModeSelector(
-    isWalking:Boolean ,
+    isWalking: Boolean,
     onModeChanged: () -> Unit,
     isModeChangeLocked: Boolean,
 ) {
@@ -186,9 +188,10 @@ fun TrainingScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ) {
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -199,11 +202,11 @@ fun TrainingScreen(
                 isModeChangeLocked = state.isModeChangeLocked
             )
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(24.dp))
 
             WorkoutStatsBlock(workTime.formatTimer(state.timeMs))
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(24.dp))
 
             // Темп + точность + бейдж (визуальный статус сигнала)
             PaceStatusBlock(
@@ -212,19 +215,19 @@ fun TrainingScreen(
                 status = status
             )
 
-            Spacer(Modifier.weight(0.5f))
+            Spacer(Modifier.height(24.dp))
 
             // Кнопки управления трекингом
             ControlButtons(
                 isTracking = (state.workoutState == WorkoutState.ACTIVE)
-                            && LocationRepository.isTracking.collectAsState().value,
+                        && LocationRepository.isTracking.collectAsState().value,
                 onStartClick = actions.onStart,
                 onStopClick = actions.onStop,
                 onSaveClick = actions.onSave,
                 isSaveEnabled = state.isSaveEnabled
             )
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
@@ -399,14 +402,13 @@ fun ControlButtons(
 fun PreviewTrainingGood() {
     MaterialTheme {
         TrainingScreen(
-state = TrainingUiState(
+            state = TrainingUiState(
                 pace = "5:40",
                 accuracy = 3f,
                 timeMs = 1751111,
                 mode = ActivityMode.WALKING,
                 workoutState = WorkoutState.ACTIVE
-            )
-            ,TrainingActions({},{},{},{},)
+            ), TrainingActions({}, {}, {}, {})
         )
     }
 }
