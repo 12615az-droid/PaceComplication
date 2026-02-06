@@ -11,14 +11,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 
-/**
- * ActivityMode — режим активности для расчёта темпа.
- *
- * Используется для:
- * - выбора допустимого диапазона скорости
- * - настройки коэффициента фильтра (EMA) в зависимости от точности GPS
- */
-enum class ActivityMode { WALKING, RUNNING }
+import com.example.pacecomplication.modes.TrainingMode
+import com.example.pacecomplication.modes.TrainingModes
+import com.example.pacecomplication.modes.RunningMode
 
 data class PaceUpdate(
     val paceValue: Double,   // для лога (например instant или ema)
@@ -69,13 +64,13 @@ object LocationRepository {
     private val _currentPace = MutableStateFlow(PACE_DEFAULT)
     val currentPace = _currentPace.asStateFlow()
 
-    private val _activityMode = MutableStateFlow(ActivityMode.RUNNING)
+    private val _activityMode = MutableStateFlow<TrainingMode>(RunningMode)
     val activityMode = _activityMode.asStateFlow()
 
     private val _isTracking = MutableStateFlow(false)
     val isTracking = _isTracking.asStateFlow()
 
-      private val _workoutState = MutableStateFlow(WorkoutState.IDLE)
+    private val _workoutState = MutableStateFlow(WorkoutState.IDLE)
     val workoutState = _workoutState.asStateFlow()
 
     private val _currentGPSAccuracy = MutableStateFlow(0f)
@@ -157,11 +152,7 @@ object LocationRepository {
      */
     fun changeMod() {
         if (_workoutState.value == WorkoutState.IDLE) {
-            _activityMode.value = if (_activityMode.value == ActivityMode.RUNNING) {
-                ActivityMode.WALKING
-            } else {
-                ActivityMode.RUNNING
-            }
+            _activityMode.value = TrainingModes.next(_activityMode.value)
             emaPace = 0.0
             Log.d(TAG, "Режим изменен на: ${_activityMode.value}")
         }
@@ -224,7 +215,7 @@ object LocationRepository {
         val acc = location.accuracy
 
         // Динамический лимит скорости
-        val maxSpeed = if (_activityMode.value == ActivityMode.WALKING) 3.5f else 8.5f
+        val maxSpeed = _activityMode.value.maxSpeedMetersPerSec
 
         return when {
             acc > ACC_BAD_THRESHOLD -> null // Слишком шумно
@@ -259,22 +250,8 @@ object LocationRepository {
      *
      * @return alpha в диапазоне (0..1)
      */
-    private fun calculateAlpha(acc: Float): Double {
-        val isWalking = _activityMode.value == ActivityMode.WALKING
-        return if (isWalking) {
-            when {
-                acc > 25f -> 0.05
-                acc > 10f -> 0.15
-                else -> 0.40
-            }
-        } else {
-            when {
-                acc > 25f -> 0.10
-                acc > 10f -> 0.30
-                else -> 0.65
-            }
-        }
-    }
+    private fun calculateAlpha(acc: Float): Double = _activityMode.value.alphaForAccuracy(acc)
+
 
     /**
      * Форматирует темп (сек/км) в строку "мин:сек".

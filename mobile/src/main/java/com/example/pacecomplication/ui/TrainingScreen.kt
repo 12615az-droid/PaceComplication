@@ -37,11 +37,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.pacecomplication.ActivityMode
 import com.example.pacecomplication.LocationRepository
 import com.example.pacecomplication.R
 import com.example.pacecomplication.WorkoutState
 import com.example.pacecomplication.WorkoutTimer
+import com.example.pacecomplication.modes.WalkingMode
 
 
 /**
@@ -406,7 +406,7 @@ fun PreviewTrainingGood() {
                 pace = "5:40",
                 accuracy = 3f,
                 timeMs = 1751111,
-                mode = ActivityMode.WALKING,
+                mode = WalkingMode,
                 workoutState = WorkoutState.ACTIVE
             ), TrainingActions({}, {}, {}, {})
         )

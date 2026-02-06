@@ -19,10 +19,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.pacecomplication.ActivityMode
+import com.example.pacecomplication.modes.TrainingMode
+import com.example.pacecomplication.modes.WalkingMode
 import com.example.pacecomplication.LocationRepository
 import com.example.pacecomplication.WorkoutState
-import com.example.pacecomplication.WorkoutTimer
+
 
 
 /**
@@ -50,10 +51,10 @@ data class TrainingUiState(
     val pace: String,
     val accuracy: Float,
     val timeMs: Long,
-    val mode: ActivityMode,
+    val mode: TrainingMode,
     val workoutState: WorkoutState,
 ) {
-    val isWalking: Boolean get() = mode == ActivityMode.WALKING
+    val isWalking: Boolean get() = mode == WalkingMode
     val isModeChangeLocked: Boolean get() = workoutState == WorkoutState.ACTIVE
     val isSaveEnabled: Boolean get() = workoutState == WorkoutState.ACTIVE && timeMs > 0
 }
