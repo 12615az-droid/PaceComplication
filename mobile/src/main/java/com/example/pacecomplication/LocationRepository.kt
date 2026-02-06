@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import android.util.Log
+import com.example.pacecomplication.filters.PaceFilter
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.DataClient
@@ -81,7 +82,10 @@ object LocationRepository {
 
     val trainingTimeMs = MyTimer.trainingTimeMs
 
-    private var emaPace: Double = 0.0
+    private val paceFilter = PaceFilter(
+        stopThreshold = STOP_THRESHOLD,
+        accBadThreshold = ACC_BAD_THRESHOLD
+    )
 
 
     // Клиент Wear OS (инициализируем лениво, чтобы не передавать контекст в каждый метод)
@@ -116,7 +120,7 @@ object LocationRepository {
         _isTracking.value = true
         _workoutState.value = WorkoutState.ACTIVE
         MyTimer.start()
-        emaPace = 0.0
+        paceFilter.reset()
     }
 
     /**
@@ -153,7 +157,7 @@ object LocationRepository {
     fun changeMod() {
         if (_workoutState.value == WorkoutState.IDLE) {
             _activityMode.value = TrainingModes.next(_activityMode.value)
-            emaPace = 0.0
+            paceFilter.reset()
             Log.d(TAG, "Режим изменен на: ${_activityMode.value}")
         }
     }
@@ -178,10 +182,13 @@ object LocationRepository {
 
         _currentGPSAccuracy.value = location.accuracy
 
-        val instantPace = processLocationToPace(location) ?: return null
-
-        emaPace = applyEmaFilter(instantPace, location.accuracy)
-        val paceString = formatPace(emaPace)
+        val filteredPace = paceFilter.apply(
+            speedMetersPerSec = location.speed,
+            accuracy = location.accuracy,
+            maxSpeedMetersPerSec = _activityMode.value.maxSpeedMetersPerSec,
+            alphaProvider = _activityMode.value::alphaForAccuracy
+        ) ?: return null
+        val paceString = formatPace(filteredPace)
 
         _currentPace.value = paceString
         sendPaceToWatch(paceString)
@@ -194,63 +201,10 @@ object LocationRepository {
         // 1) для лога число (тут выбрал emaPace, но можешь вернуть instantPace)
         // 2) для уведомления строка
         return PaceUpdate(
-            paceValue = emaPace,
+            paceValue = filteredPace,
             paceText = paceString
         )
     }
-
-
-    /**
-     * Преобразует скорость из Location в мгновенный темп (сек/км) с фильтрацией.
-     *
-     * Фильтры:
-     * - слишком плохая точность -> отбрасываем
-     * - скорость ниже STOP_THRESHOLD -> считаем "стоим" (0.0)
-     * - скорость выше maxSpeed для режима -> отбрасываем как скачок
-     *
-     * @return мгновенный темп (сек/км) или null, если точку нужно отбросить
-     */
-    private fun processLocationToPace(location: Location): Double? {
-        val speed = location.speed
-        val acc = location.accuracy
-
-        // Динамический лимит скорости
-        val maxSpeed = _activityMode.value.maxSpeedMetersPerSec
-
-        return when {
-            acc > ACC_BAD_THRESHOLD -> null // Слишком шумно
-            speed < STOP_THRESHOLD -> 0.0    // Стоим
-            speed > maxSpeed -> null         // Нефизичный скачок для выбранного режима
-            else -> 1000.0 / speed           // Секунд на км
-        }
-    }
-
-    /**
-     * Сглаживает мгновенный темп EMA-фильтром.
-     *
-     * Правила:
-     * - если темп 0 (стоим) -> возвращаем 0
-     * - если предыдущего emaPace ещё нет -> берём instantPace как старт
-     * - иначе применяем EMA: alpha*instant + (1-alpha)*prev
-     */
-    private fun applyEmaFilter(instantPace: Double, acc: Float): Double {
-        if (instantPace <= 0.0) return 0.0
-        if (emaPace <= 0.0) return instantPace
-
-        val alpha = calculateAlpha(acc)
-        return (alpha * instantPace) + (1.0 - alpha) * emaPace
-    }
-
-    /**
-     * Подбирает коэффициент EMA (alpha) по точности GPS и режиму активности.
-     *
-     * Идея:
-     * - чем хуже точность (acc больше), тем меньше alpha -> сильнее сглаживание
-     * - для бега допускаем более "живой" темп (alpha выше), чем для ходьбы
-     *
-     * @return alpha в диапазоне (0..1)
-     */
-    private fun calculateAlpha(acc: Float): Double = _activityMode.value.alphaForAccuracy(acc)
 
 
     /**
