@@ -43,7 +43,7 @@ class LocationService : Service() {
     // Отладочный логгер телеметрии (Logcat + файл)
     private lateinit var logger: TelemetryLogger
 
-    private val paceTimer = PaceTimer()
+
 
 
 
@@ -149,7 +149,6 @@ class LocationService : Service() {
         fusedLocationClient.removeLocationUpdates(locationCallback)
         // Освобождаем MediaSession, чтобы не держать системные ресурсы
         notificationHelper.destroyMediaSession()
-        paceTimer.shutdown()
 
 
     }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -40,7 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.example.pacecomplication.LocationRepository
 import com.example.pacecomplication.R
 import com.example.pacecomplication.WorkoutState
-import com.example.pacecomplication.WorkoutTimer
+import com.example.pacecomplication.timer.WorkoutTimer
 import com.example.pacecomplication.modes.WalkingMode
 
 
@@ -204,7 +206,7 @@ fun TrainingScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            WorkoutStatsBlock(workTime.formatTimer(state.timeMs))
+            WorkoutStatsBlock(workTime.formatTimer(state.timeMs),323)
 
             Spacer(Modifier.height(24.dp))
 
@@ -299,6 +301,7 @@ fun PaceStatusBlock(
 @Composable
 fun WorkoutStatsBlock(
     time: String,
+    heartRate: Int? = null,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -328,9 +331,30 @@ fun WorkoutStatsBlock(
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            Spacer(Modifier.height(8.dp))
+
+            // Пульс (заглушка)
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.FavoriteBorder,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+
+                Spacer(Modifier.width(4.dp))
+
+                Text(
+                    text = heartRate?.let { "$it bpm" } ?: "-- bpm",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+            }
+        }
         }
     }
-}
+
 
 
 /**

@@ -1,29 +1,23 @@
 package com.example.pacecomplication
 
-import android.annotation.SuppressLint
+
 import android.content.Context
 import android.location.Location
 import android.util.Log
-import com.example.pacecomplication.filters.PaceFilter
-import com.google.android.gms.wearable.PutDataMapRequest
-import com.google.android.gms.wearable.Wearable
-import com.google.android.gms.wearable.DataClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-
 
 import com.example.pacecomplication.modes.TrainingMode
 import com.example.pacecomplication.modes.TrainingModes
 import com.example.pacecomplication.modes.RunningMode
+import com.example.pacecomplication.pace.PaceCalculator
+import com.example.pacecomplication.pace.PaceUpdate
+import com.example.pacecomplication.pace.WearPaceSender
+import com.example.pacecomplication.timer.PaceTimer
 
-data class PaceUpdate(
-    val paceValue: Double,   // для лога (например instant или ema)
-    val paceText: String     // для уведомления
-)
 
 enum class WorkoutState {
-    IDLE,
-    ACTIVE
+    IDLE, ACTIVE
 }
 
 /**
@@ -82,15 +76,12 @@ object LocationRepository {
 
     val trainingTimeMs = MyTimer.trainingTimeMs
 
-    private val paceFilter = PaceFilter(
-        stopThreshold = STOP_THRESHOLD,
-        accBadThreshold = ACC_BAD_THRESHOLD
+    private val paceCalculator = PaceCalculator(
+        stopThreshold = STOP_THRESHOLD, accBadThreshold = ACC_BAD_THRESHOLD
     )
 
 
-    // Клиент Wear OS (инициализируем лениво, чтобы не передавать контекст в каждый метод)
-    @SuppressLint("StaticFieldLeak")
-    private var dataClient: DataClient? = null
+    private val wearPaceSender = WearPaceSender()
 
     // --- УПРАВЛЕНИЕ ---
 
@@ -106,7 +97,7 @@ object LocationRepository {
      */
     fun init(context: Context) {
         // Используем applicationContext, чтобы не было утечек памяти
-        dataClient = Wearable.getDataClient(context.applicationContext)
+        wearPaceSender.init(context)
     }
 
     /**
@@ -120,7 +111,7 @@ object LocationRepository {
         _isTracking.value = true
         _workoutState.value = WorkoutState.ACTIVE
         MyTimer.start()
-        paceFilter.reset()
+        paceCalculator.reset()
     }
 
     /**
@@ -157,7 +148,7 @@ object LocationRepository {
     fun changeMod() {
         if (_workoutState.value == WorkoutState.IDLE) {
             _activityMode.value = TrainingModes.next(_activityMode.value)
-            paceFilter.reset()
+            paceCalculator.reset()
             Log.d(TAG, "Режим изменен на: ${_activityMode.value}")
         }
     }
@@ -182,63 +173,21 @@ object LocationRepository {
 
         _currentGPSAccuracy.value = location.accuracy
 
-        val filteredPace = paceFilter.apply(
+        val paceUpdate = paceCalculator.calculate(
             speedMetersPerSec = location.speed,
             accuracy = location.accuracy,
             maxSpeedMetersPerSec = _activityMode.value.maxSpeedMetersPerSec,
             alphaProvider = _activityMode.value::alphaForAccuracy
         ) ?: return null
-        val paceString = formatPace(filteredPace)
+        _currentPace.value = paceUpdate.paceText
+        wearPaceSender.sendPace(paceUpdate.paceText)
 
-        _currentPace.value = paceString
-        sendPaceToWatch(paceString)
-
-
-
-
-        Log.d(TAG, "SPD: ${"%.2f".format(location.speed)} | PACE: $paceString")
+        Log.d(TAG, "SPD: ${"%.2f".format(location.speed)} | PACE: ${paceUpdate.paceText}")
 
         // 1) для лога число (тут выбрал emaPace, но можешь вернуть instantPace)
         // 2) для уведомления строка
-        return PaceUpdate(
-            paceValue = filteredPace,
-            paceText = paceString
-        )
+        return paceUpdate
     }
-
-
-    /**
-     * Форматирует темп (сек/км) в строку "мин:сек".
-     * При 0 или отрицательных значениях возвращает PACE_DEFAULT.
-     */
-    private fun formatPace(totalSecondsPerKm: Double): String {
-        if (totalSecondsPerKm <= 0) return PACE_DEFAULT
-        val totalSeconds = totalSecondsPerKm.toInt()
-        val minutes = totalSeconds / 60
-        val seconds = totalSeconds % 60
-        return "%d:%02d".format(minutes, seconds)
-    }
-
-
-    /**
-     * Отправляет текущий темп на Wear OS через DataClient (Data Layer API).
-     *
-     * Важно:
-     * - dataClient может быть null, если init() ещё не вызывался
-     * - timestamp добавляется, чтобы данные считались "новыми" и обновлялись на часах
-     *
-     * @param paceString темп в формате "мин:сек"
-     */
-    @SuppressLint("VisibleForTests")
-    private fun sendPaceToWatch(paceString: String) {
-        dataClient?.let { client ->
-            val putDataReq = PutDataMapRequest.create("/pace_updates").apply {
-                dataMap.putString("pace_key", paceString)
-                dataMap.putLong("timestamp", System.currentTimeMillis())
-            }.asPutDataRequest()
-            client.putDataItem(putDataReq)
-        }
-    }
-
-
 }
+
+

@@ -1,5 +1,4 @@
-package com.example.pacecomplication
-
+package com.example.pacecomplication.timer
 
 class WorkoutTimer {
     private var accumulatedMs: Long = 0

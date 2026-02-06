@@ -1,4 +1,4 @@
-package com.example.pacecomplication
+package com.example.pacecomplication.timer
 
 import android.os.SystemClock
 import kotlinx.coroutines.CoroutineScope
