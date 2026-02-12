@@ -12,4 +12,5 @@
     <string name="status_weak">ПЛОХО</string>
     <string name="status_ready">ЖДУ СТАРТ"</string>
     <string name="settingHeader">Параметры приложения</string>
+    <string name="continueButton">продолжить</string>
 </resources>

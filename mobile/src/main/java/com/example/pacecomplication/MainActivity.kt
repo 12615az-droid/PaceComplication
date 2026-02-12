@@ -10,9 +10,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.example.pacecomplication.ui.PaceScreen
 import com.example.pacecomplication.ui.RunningAppTheme
+import com.example.pacecomplication.ui.TrainingSetupScreen
+import com.example.pacecomplication.ui.minimaps.GoalsDialog
 
 
 /**
@@ -49,6 +53,9 @@ class MainActivity : ComponentActivity() {
     }
 
 
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -58,14 +65,18 @@ class MainActivity : ComponentActivity() {
             RunningAppTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     // Передаём в UI только события управления.
-                    // Сама Activity решает: запросить разрешения, запустить/остановить сервис и т.д.
+                    // Сама Activity решает: запросить разрешения, запустить/остановить сервис и т.д
                     PaceScreen(
                         onStartClick = { requestPacePermissions() },
                         onStopClick = { stopPaceService() },
                         onSaveClick = { savePaceService() },
-                        onModeChanged = { changeMod() }
+                        onModeChanged = { changeMod() },
+                         onClickGoalCross  = { onClickGoalCross()}
 
                     )
+
+
+
                 }
             }
         }
@@ -108,6 +119,12 @@ class MainActivity : ComponentActivity() {
     }
 
 
+
+    private fun onClickGoalCross(){
+        LocationRepository.closeTraningGoalScreenMini()
+    }
+
+
     /**
      * Останавливает трекинг:
      * - останавливает LocationService
@@ -127,6 +144,8 @@ class MainActivity : ComponentActivity() {
         LocationRepository.saveTracking()
         stopService(Intent(this, LocationService::class.java))
         LocationNotificationHelper(this).cancelNotification()
+
+
 
     }
 

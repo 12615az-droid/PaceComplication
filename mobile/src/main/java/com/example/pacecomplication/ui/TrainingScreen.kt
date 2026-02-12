@@ -46,71 +46,8 @@ import com.example.pacecomplication.timer.WorkoutTimer
 import com.example.pacecomplication.modes.WalkingMode
 
 
-/**
- * TrainingScreen — основной UI-экран тренировки.
- *
- * Назначение:
- * - отображает текущий темп и точность GPS
- * - позволяет переключать режим (бег / ходьба)
- * - содержит кнопки управления трекингом
- *
- * Особенности:
- * - экран stateless: не хранит бизнес-состояние
- * - получает все данные и события через параметры
- * - не знает про Repository и Service
- *
- * Архитектурный принцип:
- * - состояние собирается выше (PaceScreen)
- * - TrainingScreen отвечает только за отображение
- **/
 
-/**
- * ModeSelector — переключатель режима активности.
- *
- * Назначение:
- * - позволяет выбрать режим тренировки (БЕГ / ХОДЬБА)
- *
- * Особенности реализации:
- * - использует SegmentedButton (Material 3)
- * - при нажатии на уже выбранный режим событие не отправляется
- *
- * @param isWalking текущий режим (true — ходьба, false — бег)
- * @param onModeChanged событие переключения режима
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ModeSelector(
-    isWalking: Boolean,
-    onModeChanged: () -> Unit,
-    isModeChangeLocked: Boolean,
-) {
-    val options = listOf("БЕГ", "ХОДЬБА")
 
-    SingleChoiceSegmentedButtonRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        options.forEachIndexed { index, label ->
-
-            // Выбрана ли именно эта кнопка:
-            // index 0 => "БЕГ"  (isWalking = false)
-            // index 1 => "ХОДЬБА" (isWalking = true)
-            val isThisSelected = (index == 1 && isWalking) || (index == 0 && !isWalking)
-
-            SegmentedButton(
-                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                onClick = {
-                    // Важно: клики по уже выбранной кнопке игнорируем
-                    if (!isThisSelected) onModeChanged()
-                },
-                selected = isThisSelected,
-                label = { Text(label, fontWeight = FontWeight.Bold) },
-                enabled = !isModeChangeLocked
-            )
-        }
-    }
-}
 
 /**
  * SignalStatus — UI-модель состояния GPS-сигнала.
@@ -195,14 +132,6 @@ fun TrainingScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Переключение режима (БЕГ/ХОДЬБА)
-            ModeSelector(
-                isWalking = state.isWalking,
-                onModeChanged = actions.onToggleMode,
-                isModeChangeLocked = state.isModeChangeLocked
-            )
 
             Spacer(Modifier.height(24.dp))
 
@@ -392,7 +321,7 @@ fun ControlButtons(
                 .widthIn(min = 110.dp)
                 .height(64.dp)
         ) {
-            Text(stringResource(id = R.string.StartButton), maxLines = 1, softWrap = false)
+            Text(stringResource(id = R.string.continueButton), maxLines = 1, softWrap = false)
         }
 
         Button(
@@ -431,8 +360,9 @@ fun PreviewTrainingGood() {
                 accuracy = 3f,
                 timeMs = 1751111,
                 mode = WalkingMode,
-                workoutState = WorkoutState.ACTIVE
-            ), TrainingActions({}, {}, {}, {})
+                workoutState = WorkoutState.ACTIVE,
+                isGoalSetupOpen = false
+            ), TrainingActions({}, {}, {}, {}, {})
         )
     }
 }

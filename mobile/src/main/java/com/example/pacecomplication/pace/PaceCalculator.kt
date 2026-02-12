@@ -1,6 +1,5 @@
 package com.example.pacecomplication.pace
 
-import com.example.pacecomplication.pace.PaceUpdate
 import com.example.pacecomplication.filters.PaceFilter
 
 /**

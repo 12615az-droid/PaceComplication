@@ -3,6 +3,7 @@
     <string name="pace_label">PACE</string>
     <string name="pace_unit">min/km</string>
     <string name="StartButton">Start</string>
+    <string name="continueButton">continue</string>
     <string name="StopButton">Stop</string>
     <string name="SaveButton">Save</string>
     <string name="Accuracy">Accuracy: %1$.1f m</string>

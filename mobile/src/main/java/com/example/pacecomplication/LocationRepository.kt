@@ -59,6 +59,9 @@ object LocationRepository {
     private val _currentPace = MutableStateFlow(PACE_DEFAULT)
     val currentPace = _currentPace.asStateFlow()
 
+    private val _isGoalSetupOpen = MutableStateFlow(false)
+    val isGoalSetupOpen = _isGoalSetupOpen.asStateFlow()
+
     private val _activityMode = MutableStateFlow<TrainingMode>(RunningMode)
     val activityMode = _activityMode.asStateFlow()
 
@@ -132,6 +135,11 @@ object LocationRepository {
         MyTimer.reset()
         _workoutState.value = WorkoutState.IDLE
 
+    }
+
+
+    fun closeTraningGoalScreenMini(){
+        _isGoalSetupOpen.value = !_isGoalSetupOpen.value
     }
 
 

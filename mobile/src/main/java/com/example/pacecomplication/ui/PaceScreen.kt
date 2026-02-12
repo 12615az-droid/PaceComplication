@@ -53,6 +53,7 @@ data class TrainingUiState(
     val timeMs: Long,
     val mode: TrainingMode,
     val workoutState: WorkoutState,
+    val isGoalSetupOpen: Boolean,
 ) {
     val isWalking: Boolean get() = mode == WalkingMode
     val isModeChangeLocked: Boolean get() = workoutState == WorkoutState.ACTIVE
@@ -64,6 +65,7 @@ data class TrainingActions(
     val onStop: () -> Unit,
     val onSave: () -> Unit,
     val onToggleMode: () -> Unit, // оставляем твой toggle, раз тебе так удобно
+    val onClickGoalCross:() -> Unit
 )
 
 
@@ -102,7 +104,8 @@ fun PaceScreen(
     onStartClick: () -> Unit,
     onStopClick: () -> Unit,
     onSaveClick: () -> Unit,
-    onModeChanged: () -> Unit
+    onModeChanged: () -> Unit,
+    onClickGoalCross: () -> Unit
 ) {
 
     val pace by LocationRepository.currentPace.collectAsState(initial = "0:00")
@@ -110,6 +113,7 @@ fun PaceScreen(
     val timeMs by LocationRepository.trainingTimeMs.collectAsState(initial = 0L)
     val mode by LocationRepository.activityMode.collectAsState()
     val workoutState by LocationRepository.workoutState.collectAsState()
+    val isGoalSetupOpen by LocationRepository.isGoalSetupOpen.collectAsState()
 
 
 
@@ -118,22 +122,29 @@ fun PaceScreen(
         accuracy = accuracy,
         timeMs = timeMs,
         mode = mode,
-        workoutState = workoutState
+        workoutState = workoutState,
+        isGoalSetupOpen = isGoalSetupOpen
     )
 
     val actions = TrainingActions(
         onStart = onStartClick,
         onStop = onStopClick,
         onSave = onSaveClick,
-        onToggleMode = onModeChanged
+        onToggleMode = onModeChanged,
+        onClickGoalCross = onClickGoalCross
+
     )
 
 
 
+    if (workoutState == WorkoutState.IDLE)
     PaceAppShell(
         state,
         actions
     )
+    else
+        TrainingScreen(state,
+        actions)
 }
 
 
@@ -306,10 +317,12 @@ fun AppNavHost(
     ) {
         composable(Screen.Training.route) {
             // Главный экран тренировки
-            TrainingScreen(
-                state = state,
-                actions = actions
-            )
+          // TrainingScreen(
+               // state = state,
+             //   actions = actions
+           // )
+            TrainingSetupScreen(state , actions)
+
         }
 
         composable(Screen.History.route) {
