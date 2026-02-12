@@ -14,7 +14,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.pacecomplication.WorkoutState
 import com.example.pacecomplication.modes.WalkingMode
-import com.example.pacecomplication.ui.minimaps.GoalsDialog
+import com.example.pacecomplication.ui.goals.GoalsDialog
 
 /**
  * TrainingSetupScreen — экран подготовки перед стартом тренировки (IDLE).
@@ -43,7 +43,7 @@ fun TrainingSetupScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            GoalsDialog(state.isGoalSetupOpen, actions.onClickGoalCross , {})
+            GoalsDialog(state.isGoalSetupOpen, actions.onCloseGoalSetup , {})
 
             SetupHeader()
 
@@ -58,7 +58,7 @@ fun TrainingSetupScreen(
             Spacer(Modifier.height(16.dp))
 
             GoalsSelectionCard(
-                onClick = actions.onClickGoalCross
+                onClick = actions.onOpenGoalSetup
             )
 
             Spacer(Modifier.height(16.dp))
@@ -299,7 +299,7 @@ private fun TrainingSetupScreenPreviewRunning() {
                 mode = WalkingMode,
                 workoutState = WorkoutState.ACTIVE,
                  isGoalSetupOpen = true
-            ), TrainingActions({}, {}, {}, {}, {})
+            ), TrainingActions({}, {}, {}, {}, {},{})
         )
     }
 }

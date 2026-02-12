@@ -75,9 +75,9 @@ object LocationRepository {
     val currentGPSAccuracy = _currentGPSAccuracy.asStateFlow()
 
 
-    val MyTimer = PaceTimer()
+     private val paceTimer = PaceTimer()
 
-    val trainingTimeMs = MyTimer.trainingTimeMs
+    val trainingTimeMs = paceTimer.trainingTimeMs
 
     private val paceCalculator = PaceCalculator(
         stopThreshold = STOP_THRESHOLD, accBadThreshold = ACC_BAD_THRESHOLD
@@ -113,7 +113,7 @@ object LocationRepository {
     fun startTracking() {
         _isTracking.value = true
         _workoutState.value = WorkoutState.ACTIVE
-        MyTimer.start()
+        paceTimer.start()
         paceCalculator.reset()
     }
 
@@ -127,19 +127,19 @@ object LocationRepository {
     fun stopTracking() {
         _isTracking.value = false
         _currentGPSAccuracy.value = 0f
-        MyTimer.stop()
+        paceTimer.stop()
     }
 
     fun saveTracking() {
         stopTracking()
-        MyTimer.reset()
+         paceTimer.reset()
         _workoutState.value = WorkoutState.IDLE
 
     }
 
 
-    fun closeTraningGoalScreenMini(){
-        _isGoalSetupOpen.value = !_isGoalSetupOpen.value
+    fun setTrainingGoalDialogOpen(isOpen: Boolean) {
+        _isGoalSetupOpen.value = isOpen
     }
 
 
@@ -153,7 +153,7 @@ object LocationRepository {
      * При смене режима:
      * - сбрасывается EMA-фильтр (сглаживание начинается заново)
      */
-    fun changeMod() {
+    fun changeMode() {
         if (_workoutState.value == WorkoutState.IDLE) {
             _activityMode.value = TrainingModes.next(_activityMode.value)
             paceCalculator.reset()

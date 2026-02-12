@@ -95,8 +95,8 @@ class LocationService : Service() {
     private fun updateForegroundNotification(pace: String?) {
          if (pace.isNullOrBlank()) return
         val notification = notificationHelper.getNotification(pace)
-        val nm = getSystemService(NotificationManager::class.java)
-        nm.notify(LocationNotificationHelper.NOTIFICATION_ID, notification)
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.notify(LocationNotificationHelper.NOTIFICATION_ID, notification)
     }
 
     /**

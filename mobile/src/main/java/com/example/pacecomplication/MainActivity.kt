@@ -10,13 +10,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.example.pacecomplication.ui.PaceScreen
 import com.example.pacecomplication.ui.RunningAppTheme
-import com.example.pacecomplication.ui.TrainingSetupScreen
-import com.example.pacecomplication.ui.minimaps.GoalsDialog
 
 
 /**
@@ -70,9 +66,9 @@ class MainActivity : ComponentActivity() {
                         onStartClick = { requestPacePermissions() },
                         onStopClick = { stopPaceService() },
                         onSaveClick = { savePaceService() },
-                        onModeChanged = { changeMod() },
-                         onClickGoalCross  = { onClickGoalCross()}
-
+                        onModeChanged = { changeMode() },
+                        onOpenGoalSetup = { openGoalSetupDialog() },
+                        onCloseGoalSetup = { closeGoalSetupDialog() }
                     )
 
 
@@ -113,15 +109,19 @@ class MainActivity : ComponentActivity() {
     /**
      * Переключает режим активности (бег/ходьба) через LocationRepository.
      */
-    private fun changeMod() {
-        LocationRepository.changeMod()
+    private fun changeMode() {
+        LocationRepository.changeMode()
 
     }
 
 
 
-    private fun onClickGoalCross(){
-        LocationRepository.closeTraningGoalScreenMini()
+    private fun openGoalSetupDialog() {
+        LocationRepository.setTrainingGoalDialogOpen(true)
+    }
+
+    private fun closeGoalSetupDialog() {
+        LocationRepository.setTrainingGoalDialogOpen(false)
     }
 
 

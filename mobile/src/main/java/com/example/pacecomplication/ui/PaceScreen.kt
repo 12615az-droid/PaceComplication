@@ -65,7 +65,8 @@ data class TrainingActions(
     val onStop: () -> Unit,
     val onSave: () -> Unit,
     val onToggleMode: () -> Unit, // оставляем твой toggle, раз тебе так удобно
-    val onClickGoalCross:() -> Unit
+     val onOpenGoalSetup: () -> Unit,
+    val onCloseGoalSetup: () -> Unit
 )
 
 
@@ -105,7 +106,8 @@ fun PaceScreen(
     onStopClick: () -> Unit,
     onSaveClick: () -> Unit,
     onModeChanged: () -> Unit,
-    onClickGoalCross: () -> Unit
+    onOpenGoalSetup: () -> Unit,
+    onCloseGoalSetup: () -> Unit
 ) {
 
     val pace by LocationRepository.currentPace.collectAsState(initial = "0:00")
@@ -131,7 +133,8 @@ fun PaceScreen(
         onStop = onStopClick,
         onSave = onSaveClick,
         onToggleMode = onModeChanged,
-        onClickGoalCross = onClickGoalCross
+        onOpenGoalSetup = onOpenGoalSetup,
+        onCloseGoalSetup = onCloseGoalSetup
 
     )
 

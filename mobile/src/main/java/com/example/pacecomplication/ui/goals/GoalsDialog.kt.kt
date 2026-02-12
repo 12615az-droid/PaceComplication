@@ -1,4 +1,4 @@
-package com.example.pacecomplication.ui.minimaps
+package com.example.pacecomplication.ui.goals
 
 
 import androidx.compose.animation.AnimatedVisibility

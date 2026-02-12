@@ -20,17 +20,12 @@ import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -44,9 +39,6 @@ import com.example.pacecomplication.R
 import com.example.pacecomplication.WorkoutState
 import com.example.pacecomplication.timer.WorkoutTimer
 import com.example.pacecomplication.modes.WalkingMode
-
-
-
 
 
 /**
@@ -83,35 +75,12 @@ fun getSignalStatus(accuracy: Float): SignalStatus {
         accuracy <= 0f -> SignalStatus("", Color.Gray)
         accuracy <= 8f -> SignalStatus(stringResource(R.string.status_perfect), Color.Green)
         accuracy <= 20f -> SignalStatus(
-            stringResource(R.string.status_average),
-            Color(0xFFFFC107)
+            stringResource(R.string.status_average), Color(0xFFFFC107)
         ) // желтый
         else -> SignalStatus(stringResource(R.string.status_weak), Color.Red)
     }
 }
 
-
-/**
- * TrainingScreen — основной экран тренировки.
- *
- * Назначение:
- * - отображает темп, точность GPS и статус сигнала
- * - позволяет управлять трекингом (старт / стоп / сохранить)
- * - отображает текущий режим активности
- *
- * Принцип работы:
- * - не хранит бизнес-состояние
- * - получает данные и события через параметры
- * - реагирует на изменения состояния автоматически
- *
- * @param pace текущий темп (мм:сс)
- * @param accuracy точность GPS в метрах
- * @param isWalking флаг режима активности
- * @param onModeChanged обработчик смены режима
- * @param onStartClick обработчик кнопки "Старт"
- * @param onStopClick обработчик кнопки "Стоп"
- * @param onSaveClick обработчик кнопки "Сохранить"
- */
 
 @Composable
 fun TrainingScreen(
@@ -135,23 +104,20 @@ fun TrainingScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            WorkoutStatsBlock(workTime.formatTimer(state.timeMs),323)
+            WorkoutStatsBlock(workTime.formatTimer(state.timeMs), 323)
 
             Spacer(Modifier.height(24.dp))
 
             // Темп + точность + бейдж (визуальный статус сигнала)
             PaceStatusBlock(
-                pace = state.pace,
-                accuracy = state.accuracy,
-                status = status
+                pace = state.pace, accuracy = state.accuracy, status = status
             )
 
             Spacer(Modifier.height(24.dp))
 
             // Кнопки управления трекингом
             ControlButtons(
-                isTracking = (state.workoutState == WorkoutState.ACTIVE)
-                        && LocationRepository.isTracking.collectAsState().value,
+                isTracking = (state.workoutState == WorkoutState.ACTIVE) && LocationRepository.isTracking.collectAsState().value,
                 onStartClick = actions.onStart,
                 onStopClick = actions.onStop,
                 onSaveClick = actions.onSave,
@@ -177,18 +143,13 @@ fun TrainingScreen(
  */
 @Composable
 fun PaceStatusBlock(
-    pace: String,
-    accuracy: Float,
-    status: SignalStatus
+    pace: String, accuracy: Float, status: SignalStatus
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
         // Главный крупный текст темпа
         Text(
-            text = pace,
-            fontSize = 100.sp,
-            fontWeight = FontWeight.Black,
-            color = status.color
+            text = pace, fontSize = 100.sp, fontWeight = FontWeight.Black, color = status.color
         )
 
         // Точность: если нет сигнала -> "готовность", иначе показываем число
@@ -211,8 +172,7 @@ fun PaceStatusBlock(
         // Бейдж со статусом (если текст пустой — не рисуем)
         if (status.text.isNotEmpty()) {
             Surface(
-                color = status.color.copy(alpha = 0.2f),
-                shape = MaterialTheme.shapes.small
+                color = status.color.copy(alpha = 0.2f), shape = MaterialTheme.shapes.small
             ) {
                 Text(
                     text = status.text,
@@ -229,9 +189,7 @@ fun PaceStatusBlock(
 
 @Composable
 fun WorkoutStatsBlock(
-    time: String,
-    heartRate: Int? = null,
-    modifier: Modifier = Modifier
+    time: String, heartRate: Int? = null, modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -274,16 +232,13 @@ fun WorkoutStatsBlock(
 
                 Spacer(Modifier.width(4.dp))
 
-                Text(
-                    text = heartRate?.let { "$it bpm" } ?: "-- bpm",
+                Text(text = heartRate?.let { "$it bpm" } ?: "-- bpm",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
             }
         }
-        }
     }
-
+}
 
 
 /**
@@ -362,7 +317,7 @@ fun PreviewTrainingGood() {
                 mode = WalkingMode,
                 workoutState = WorkoutState.ACTIVE,
                 isGoalSetupOpen = false
-            ), TrainingActions({}, {}, {}, {}, {})
+            ), TrainingActions({}, {}, {}, {}, {}, {})
         )
     }
 }
