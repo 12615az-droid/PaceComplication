@@ -34,7 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.pacecomplication.LocationRepository
+import com.example.pacecomplication.RepositoryProvider
 import com.example.pacecomplication.R
 import com.example.pacecomplication.WorkoutState
 import com.example.pacecomplication.timer.WorkoutTimer
@@ -117,7 +117,7 @@ fun TrainingScreen(
 
             // Кнопки управления трекингом
             ControlButtons(
-                isTracking = (state.workoutState == WorkoutState.ACTIVE) && LocationRepository.isTracking.collectAsState().value,
+                isTracking = (state.workoutState == WorkoutState.ACTIVE) && RepositoryProvider.locationRepository.isTracking.collectAsState().value,
                 onStartClick = actions.onStart,
                 onStopClick = actions.onStop,
                 onSaveClick = actions.onSave,

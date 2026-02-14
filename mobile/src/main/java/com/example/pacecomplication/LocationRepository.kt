@@ -20,36 +20,22 @@ enum class WorkoutState {
     IDLE, ACTIVE
 }
 
-/**
- * LocationRepository — центральное хранилище состояния трекинга и логики расчёта темпа.
- *
- * Назначение:
- * - хранит состояние для UI через StateFlow (темп, точность, режим, флаг трекинга)
- * - принимает Location из LocationService
- * - фильтрует шумные значения GPS и скорости
- * - считает темп (сек/км) и сглаживает его EMA-фильтром
- * - отправляет итоговый темп на Wear OS через DataClient (если инициализирован)
- *
- * Использование:
- * 1) init(context) — один раз при старте (обычно в Service)
- * 2) startTracking()/stopTracking() — управление трекингом
- * 3) updatePace(location) — вызывается на каждом обновлении координат
- *
- * Важно:
- * - объект singleton: живёт в процессе приложения
- * - UI подписывается на currentPace/activityMode/isTracking/currentGPSAccuracy
- */
-object LocationRepository {
-
-    private const val TAG = "PACE_DEBUG"
-
-    // Пороги (теперь это константы, а не переменные)
-    // STOP_THRESHOLD — ниже этой скорости считаем, что стоим
-    // ACC_BAD_THRESHOLD — точность хуже этого значения считаем шумом (значение отбрасываем)
-    // PACE_DEFAULT — значение темпа при отсутствии данных/сигнала
-    private const val STOP_THRESHOLD = 0.5f
+   private const val STOP_THRESHOLD = 0.5f
     private const val ACC_BAD_THRESHOLD = 35f
     private const val PACE_DEFAULT = "0:00"
+
+class LocationRepository(
+    private val paceTimer: PaceTimer = PaceTimer(),
+    private val paceCalculator: PaceCalculator = PaceCalculator(
+        stopThreshold = STOP_THRESHOLD, accBadThreshold = ACC_BAD_THRESHOLD
+    ),
+    private val wearPaceSender: WearPaceSender = WearPaceSender()
+)  {
+
+    private  val TAG = "PACE_DEBUG"
+
+
+
 
     // Состояние репозитория (наблюдаемое UI через StateFlow):
     // - currentPace: строка темпа для экрана тренировки
@@ -75,16 +61,14 @@ object LocationRepository {
     val currentGPSAccuracy = _currentGPSAccuracy.asStateFlow()
 
 
-     private val paceTimer = PaceTimer()
+
 
     val trainingTimeMs = paceTimer.trainingTimeMs
 
-    private val paceCalculator = PaceCalculator(
-        stopThreshold = STOP_THRESHOLD, accBadThreshold = ACC_BAD_THRESHOLD
-    )
 
 
-    private val wearPaceSender = WearPaceSender()
+
+
 
     // --- УПРАВЛЕНИЕ ---
 

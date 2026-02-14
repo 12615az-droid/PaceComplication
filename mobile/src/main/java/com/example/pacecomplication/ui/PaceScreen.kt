@@ -21,7 +21,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.pacecomplication.modes.TrainingMode
 import com.example.pacecomplication.modes.WalkingMode
-import com.example.pacecomplication.LocationRepository
+import com.example.pacecomplication.RepositoryProvider
 import com.example.pacecomplication.WorkoutState
 
 
@@ -110,12 +110,12 @@ fun PaceScreen(
     onCloseGoalSetup: () -> Unit
 ) {
 
-    val pace by LocationRepository.currentPace.collectAsState(initial = "0:00")
-    val accuracy by LocationRepository.currentGPSAccuracy.collectAsState(initial = 0f)
-    val timeMs by LocationRepository.trainingTimeMs.collectAsState(initial = 0L)
-    val mode by LocationRepository.activityMode.collectAsState()
-    val workoutState by LocationRepository.workoutState.collectAsState()
-    val isGoalSetupOpen by LocationRepository.isGoalSetupOpen.collectAsState()
+   val pace by RepositoryProvider.locationRepository.currentPace.collectAsState(initial = "0:00")
+    val accuracy by RepositoryProvider.locationRepository.currentGPSAccuracy.collectAsState(initial = 0f)
+    val timeMs by RepositoryProvider.locationRepository.trainingTimeMs.collectAsState(initial = 0L)
+    val mode by RepositoryProvider.locationRepository.activityMode.collectAsState()
+    val workoutState by RepositoryProvider.locationRepository.workoutState.collectAsState()
+    val isGoalSetupOpen by RepositoryProvider.locationRepository.isGoalSetupOpen.collectAsState()
 
 
 

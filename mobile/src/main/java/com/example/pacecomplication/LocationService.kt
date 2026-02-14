@@ -64,7 +64,7 @@ class LocationService : Service() {
         super.onCreate()
         notificationHelper = LocationNotificationHelper(this)
         logger = TelemetryLogger(this)
-        LocationRepository.init(this)
+        RepositoryProvider.locationRepository.init(this)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         notificationHelper.createNotificationChannel()
         // Подготовка callback-логики до старта updates
@@ -83,7 +83,7 @@ class LocationService : Service() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 for (location in locationResult.locations) {
-                    val paceTwo = LocationRepository.updatePace(location)
+                    val paceTwo = RepositoryProvider.locationRepository.updatePace(location)
 
                     logger.log("SmoothPACE: ${paceTwo?.paceValue} | ACC: ${location.accuracy}")
                     updateForegroundNotification(paceTwo?.paceText)

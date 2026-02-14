@@ -102,7 +102,7 @@ class MainActivity : ComponentActivity() {
      * - запускает LocationService
      */
     private fun startPaceService() {
-        LocationRepository.startTracking()
+        RepositoryProvider.locationRepository.startTracking()
         startService(Intent(this, LocationService::class.java))
     }
 
@@ -110,18 +110,19 @@ class MainActivity : ComponentActivity() {
      * Переключает режим активности (бег/ходьба) через LocationRepository.
      */
     private fun changeMode() {
-        LocationRepository.changeMode()
+        RepositoryProvider.locationRepository.changeMode()
+
 
     }
 
 
 
     private fun openGoalSetupDialog() {
-        LocationRepository.setTrainingGoalDialogOpen(true)
+       RepositoryProvider.locationRepository.setTrainingGoalDialogOpen(true)
     }
 
     private fun closeGoalSetupDialog() {
-        LocationRepository.setTrainingGoalDialogOpen(false)
+         RepositoryProvider.locationRepository.setTrainingGoalDialogOpen(false)
     }
 
 
@@ -132,16 +133,16 @@ class MainActivity : ComponentActivity() {
      */
     @SuppressLint("ImplicitSamInstance")
     private fun stopPaceService() {
-        LocationRepository.stopTracking()
+         RepositoryProvider.locationRepository.stopTracking()
         stopService(Intent(this, LocationService::class.java))
         LocationNotificationHelper(this).showNotification(
-            LocationRepository.currentPace.value
+            RepositoryProvider.locationRepository.currentPace.value
         )
     }
 
 
     private fun savePaceService() {
-        LocationRepository.saveTracking()
+        RepositoryProvider.locationRepository.saveTracking()
         stopService(Intent(this, LocationService::class.java))
         LocationNotificationHelper(this).cancelNotification()
 

@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    // 1. ПРИМЕНЯЕМ ПЛАГИН
     alias(libs.plugins.kotlin.compose)
 }
 
@@ -41,13 +40,8 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2024.02.00")
-    implementation(composeBom)
 
-    // Вот то, что ты пытаешься импортировать
     implementation(libs.androidx.material3)
-
-    // И базовые вещи для отрисовки
     implementation(libs.ui)
     implementation(libs.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
@@ -65,13 +59,14 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material)
+    implementation(libs.koin.android)
+    implementation(libs.koin.compose)
     testImplementation(libs.junit)
-    implementation("androidx.navigation:navigation-compose:2.9.6")
-    implementation("androidx.compose.material:material-icons-extended:1.7.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
-    implementation("androidx.media:media:1.7.1")
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.media)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     debugImplementation(libs.androidx.ui.tooling)
-    wearApp(project(":wear"))
 }
