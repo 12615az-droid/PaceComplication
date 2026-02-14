@@ -62,8 +62,6 @@ class LocationRepository(
     val currentGPSAccuracy = _currentGPSAccuracy.asStateFlow()
 
 
-
-
     val trainingTimeMs = paceTimer.trainingTimeMs
 
 

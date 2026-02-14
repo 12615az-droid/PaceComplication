@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.sp
 import com.example.pacecomplication.R
 import com.example.pacecomplication.WorkoutState
 import com.example.pacecomplication.timer.WorkoutTimer
-import com.example.pacecomplication.modes.WalkingMode
 import org.koin.androidx.compose.koinViewModel
 
 

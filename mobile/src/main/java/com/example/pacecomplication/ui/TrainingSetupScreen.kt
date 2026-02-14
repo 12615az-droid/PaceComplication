@@ -67,7 +67,7 @@ fun TrainingSetupScreen(
             Spacer(Modifier.height(16.dp))
 
             GoalsSelectionCard(
-                onClick = {viewModel.onCloseGoalSetup()}
+                onClick = {viewModel.onOpenGoalSetup()}
             )
 
             Spacer(Modifier.height(16.dp))
