@@ -29,7 +29,8 @@ class LocationRepository(
     private val paceCalculator: PaceCalculator = PaceCalculator(
         stopThreshold = STOP_THRESHOLD, accBadThreshold = ACC_BAD_THRESHOLD
     ),
-    private val wearPaceSender: WearPaceSender = WearPaceSender()
+    private val wearPaceSender: WearPaceSender = WearPaceSender(),
+    private val context: Context
 )  {
 
     private  val TAG = "PACE_DEBUG"

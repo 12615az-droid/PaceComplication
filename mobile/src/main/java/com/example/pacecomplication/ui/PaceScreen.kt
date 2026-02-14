@@ -23,7 +23,7 @@ import com.example.pacecomplication.modes.TrainingMode
 import com.example.pacecomplication.modes.WalkingMode
 import com.example.pacecomplication.RepositoryProvider
 import com.example.pacecomplication.WorkoutState
-
+import org.koin.androidx.compose.koinViewModel
 
 
 /**
@@ -102,20 +102,17 @@ data class TrainingActions(
  */
 @Composable
 fun PaceScreen(
-    onStartClick: () -> Unit,
-    onStopClick: () -> Unit,
-    onSaveClick: () -> Unit,
-    onModeChanged: () -> Unit,
-    onOpenGoalSetup: () -> Unit,
-    onCloseGoalSetup: () -> Unit
+    viewModel: TrainingViewModel = koinViewModel()
 ) {
 
-   val pace by RepositoryProvider.locationRepository.currentPace.collectAsState(initial = "0:00")
-    val accuracy by RepositoryProvider.locationRepository.currentGPSAccuracy.collectAsState(initial = 0f)
-    val timeMs by RepositoryProvider.locationRepository.trainingTimeMs.collectAsState(initial = 0L)
-    val mode by RepositoryProvider.locationRepository.activityMode.collectAsState()
-    val workoutState by RepositoryProvider.locationRepository.workoutState.collectAsState()
-    val isGoalSetupOpen by RepositoryProvider.locationRepository.isGoalSetupOpen.collectAsState()
+
+
+   val pace by viewModel.currentPace.collectAsState(initial = "0:00")
+    val accuracy by viewModel.currentGPSAccuracy.collectAsState(initial = 0f)
+    val timeMs by viewModel.trainingTimeMs.collectAsState(initial = 0L)
+    val mode by viewModel.activityMode.collectAsState()
+    val workoutState by viewModel.workoutState.collectAsState()
+    val isGoalSetupOpen by viewModel.isGoalSetupOpen.collectAsState()
 
 
 
@@ -129,12 +126,12 @@ fun PaceScreen(
     )
 
     val actions = TrainingActions(
-        onStart = onStartClick,
-        onStop = onStopClick,
-        onSave = onSaveClick,
-        onToggleMode = onModeChanged,
-        onOpenGoalSetup = onOpenGoalSetup,
-        onCloseGoalSetup = onCloseGoalSetup
+        onStart = viewModel.startTracking,
+        onStop = viewModel.onStopClick,
+        onSave = viewModel.onSaveClick,
+        onToggleMode = viewModel.onModeChanged,
+        onOpenGoalSetup = viewModel.onOpenGoalSetup,
+        onCloseGoalSetup = viewModel.onCloseGoalSetup
 
     )
 

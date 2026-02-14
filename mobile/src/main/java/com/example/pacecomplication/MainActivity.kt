@@ -62,14 +62,7 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     // Передаём в UI только события управления.
                     // Сама Activity решает: запросить разрешения, запустить/остановить сервис и т.д
-                    PaceScreen(
-                        onStartClick = { requestPacePermissions() },
-                        onStopClick = { stopPaceService() },
-                        onSaveClick = { savePaceService() },
-                        onModeChanged = { changeMode() },
-                        onOpenGoalSetup = { openGoalSetupDialog() },
-                        onCloseGoalSetup = { closeGoalSetupDialog() }
-                    )
+                    PaceScreen()
 
 
 
@@ -104,25 +97,6 @@ class MainActivity : ComponentActivity() {
     private fun startPaceService() {
         RepositoryProvider.locationRepository.startTracking()
         startService(Intent(this, LocationService::class.java))
-    }
-
-    /**
-     * Переключает режим активности (бег/ходьба) через LocationRepository.
-     */
-    private fun changeMode() {
-        RepositoryProvider.locationRepository.changeMode()
-
-
-    }
-
-
-
-    private fun openGoalSetupDialog() {
-       RepositoryProvider.locationRepository.setTrainingGoalDialogOpen(true)
-    }
-
-    private fun closeGoalSetupDialog() {
-         RepositoryProvider.locationRepository.setTrainingGoalDialogOpen(false)
     }
 
 
