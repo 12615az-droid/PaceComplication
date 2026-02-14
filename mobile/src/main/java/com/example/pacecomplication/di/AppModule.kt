@@ -7,7 +7,7 @@ import org.koin.dsl.module
 
 val appModule = module {
     // 1. Объявляем Репозиторий как синглтон (один на всё приложение)
-    single { LocationRepository(get()) }
+    single { LocationRepository(context = get()) }
 
     // 2. Объявляем Вьюмодель
     // get() сам найдет LocationRepository, потому что мы его объявили строчкой выше

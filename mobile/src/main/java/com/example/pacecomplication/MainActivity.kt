@@ -13,6 +13,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.example.pacecomplication.ui.PaceScreen
 import com.example.pacecomplication.ui.RunningAppTheme
+import org.koin.android.ext.android.inject
 
 
 /**
@@ -29,6 +30,9 @@ import com.example.pacecomplication.ui.RunningAppTheme
  */
 class MainActivity : ComponentActivity() {
 
+
+
+    private val locationRepository: LocationRepository by inject()
     // Лаунчер запроса разрешений. Callback вызывается системой после ответа пользователя.
     // Если разрешения получены — запускаем трекинг и сервис.
     private val locationPermissionRequest = registerForActivityResult(
@@ -95,7 +99,7 @@ class MainActivity : ComponentActivity() {
      * - запускает LocationService
      */
     private fun startPaceService() {
-        RepositoryProvider.locationRepository.startTracking()
+         locationRepository.startTracking()
         startService(Intent(this, LocationService::class.java))
     }
 
@@ -107,16 +111,16 @@ class MainActivity : ComponentActivity() {
      */
     @SuppressLint("ImplicitSamInstance")
     private fun stopPaceService() {
-         RepositoryProvider.locationRepository.stopTracking()
+        locationRepository.stopTracking()
         stopService(Intent(this, LocationService::class.java))
         LocationNotificationHelper(this).showNotification(
-            RepositoryProvider.locationRepository.currentPace.value
+            locationRepository.currentPace.value
         )
     }
 
 
     private fun savePaceService() {
-        RepositoryProvider.locationRepository.saveTracking()
+        locationRepository.saveTracking()
         stopService(Intent(this, LocationService::class.java))
         LocationNotificationHelper(this).cancelNotification()
 

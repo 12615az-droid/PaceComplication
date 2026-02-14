@@ -7,6 +7,8 @@ import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -15,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.example.pacecomplication.WorkoutState
 import com.example.pacecomplication.modes.WalkingMode
 import com.example.pacecomplication.ui.goals.GoalsDialog
+import org.koin.androidx.compose.koinViewModel
 
 /**
  * TrainingSetupScreen — экран подготовки перед стартом тренировки (IDLE).
@@ -28,10 +31,16 @@ import com.example.pacecomplication.ui.goals.GoalsDialog
  */
 @Composable
 fun TrainingSetupScreen(
-    state: TrainingUiState,
-    actions: TrainingActions,
     modifier: Modifier = Modifier,
+    viewModel: TrainingViewModel = koinViewModel()
 ) {
+    val pace by viewModel.currentPace.collectAsState(initial = "0:00")
+    val accuracy by viewModel.currentGPSAccuracy.collectAsState(initial = 0f)
+    val timeMs by viewModel.trainingTimeMs.collectAsState(initial = 0L)
+    val mode by viewModel.activityMode.collectAsState()
+    val workoutState by viewModel.workoutState.collectAsState()
+    val isGoalSetupOpen by viewModel.isGoalSetupOpen.collectAsState()
+    val isTracking by viewModel.isTracking.collectAsState()
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -43,7 +52,7 @@ fun TrainingSetupScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            GoalsDialog(state.isGoalSetupOpen, actions.onCloseGoalSetup , {})
+            GoalsDialog(isGoalSetupOpen, {viewModel.onCloseGoalSetup()} , {})
 
             SetupHeader()
 
@@ -51,14 +60,14 @@ fun TrainingSetupScreen(
             Spacer(Modifier.height(24.dp))
 
             ModeSelectionCard(
-                isWalking = state.isWalking,
-                onModeToggle =actions.onToggleMode
+                isWalking = mode == WalkingMode,
+                onModeToggle = {viewModel.onModeChanged()}
             )
 
             Spacer(Modifier.height(16.dp))
 
             GoalsSelectionCard(
-                onClick = actions.onOpenGoalSetup
+                onClick = {viewModel.onCloseGoalSetup()}
             )
 
             Spacer(Modifier.height(16.dp))
@@ -68,7 +77,7 @@ fun TrainingSetupScreen(
             Spacer(Modifier.weight(1f))
 
             StartWorkoutButton(
-                onClick = actions.onStart
+                onClick = {viewModel.startTracking()}
             )
 
             Spacer(Modifier.height(16.dp))
@@ -286,20 +295,3 @@ private fun StartWorkoutButton(
 
 
 
-
-@Preview(showBackground = true, name = "Setup — RUNNING")
-@Composable
-private fun TrainingSetupScreenPreviewRunning() {
-    RunningAppTheme {
-        TrainingSetupScreen(
-            state = TrainingUiState(
-                pace = "5:40",
-                accuracy = 3f,
-                timeMs = 1751111,
-                mode = WalkingMode,
-                workoutState = WorkoutState.ACTIVE,
-                 isGoalSetupOpen = true
-            ), TrainingActions({}, {}, {}, {}, {},{})
-        )
-    }
-}

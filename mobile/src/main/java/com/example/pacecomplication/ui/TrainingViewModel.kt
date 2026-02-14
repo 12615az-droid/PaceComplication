@@ -22,26 +22,27 @@ class TrainingViewModel(
     val isGoalSetupOpen = repository.isGoalSetupOpen
     // val currentMode = repository.currentMode // раскомментируй, если есть
 
-    // 2. Прокидываем команды (нажатия кнопок)
-    fun startTracking() {
-        repository.startTracking()
-    }
+    val isTracking = repository.isTracking
 
-    fun stopTracking() {
-        repository.stopTracking()
-    }
+    fun startTracking() = repository.startTracking()
 
-    fun changeMode(){
-        repository.changeMode()
-    }
+    fun stopTracking() = repository.stopTracking()
 
-    fun openGoalSetupDialog(){
-        repository.setTrainingGoalDialogOpen(true)
-    }
-    fun closeGoalSetupDialog(){
-        repository.setTrainingGoalDialogOpen(false)
-    }
+    fun saveTracking() = repository.saveTracking()
 
-    // Если нужно менять режим
-    // fun changeMode(mode: TrainingMode) = repository.changeMode(mode)
+    fun changeMode() = repository.changeMode()
+
+    fun openGoalSetupDialog() = repository.setTrainingGoalDialogOpen(true)
+
+    fun closeGoalSetupDialog() = repository.setTrainingGoalDialogOpen(false)
+
+    fun onStopClick() = stopTracking()
+
+    fun onSaveClick() = saveTracking()
+
+    fun onModeChanged() = changeMode()
+
+    fun onOpenGoalSetup() = openGoalSetupDialog()
+
+    fun onCloseGoalSetup() = closeGoalSetupDialog()
 }

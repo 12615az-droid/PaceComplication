@@ -7,8 +7,7 @@ import android.content.pm.ServiceInfo
 import android.os.*
 
 import com.google.android.gms.location.*
-
-
+import org.koin.android.ext.android.inject
 
 
 /**
@@ -32,10 +31,11 @@ import com.google.android.gms.location.*
 class LocationService : Service() {
 
     // Google Fused Location Provider — источник локации
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private val locationRepository: LocationRepository by inject()
 
     // Callback, куда приходят обновления локации
-    private lateinit var locationCallback: LocationCallback
+   private lateinit var fusedLocationClient: FusedLocationProviderClient
+   private lateinit var locationCallback: LocationCallback
 
     // Сборка уведомления foreground-сервиса
     private lateinit var notificationHelper: LocationNotificationHelper
@@ -64,7 +64,7 @@ class LocationService : Service() {
         super.onCreate()
         notificationHelper = LocationNotificationHelper(this)
         logger = TelemetryLogger(this)
-        RepositoryProvider.locationRepository.init(this)
+        locationRepository.init(this)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         notificationHelper.createNotificationChannel()
         // Подготовка callback-логики до старта updates
@@ -83,10 +83,9 @@ class LocationService : Service() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 for (location in locationResult.locations) {
-                    val paceTwo = RepositoryProvider.locationRepository.updatePace(location)
-
-                    logger.log("SmoothPACE: ${paceTwo?.paceValue} | ACC: ${location.accuracy}")
-                    updateForegroundNotification(paceTwo?.paceText)
+                      val paceUpdate = locationRepository.updatePace(location)
+                    logger.log("SmoothPACE: ${paceUpdate?.paceValue} | ACC: ${location.accuracy}")
+                    updateForegroundNotification(paceUpdate?.paceText)
                 }
             }
         }
@@ -113,7 +112,11 @@ class LocationService : Service() {
         val notification = notificationHelper.getNotification("0:00")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(LocationNotificationHelper.NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
+            startForeground(
+                LocationNotificationHelper.NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+            )
         } else {
             startForeground(LocationNotificationHelper.NOTIFICATION_ID, notification)
         }
@@ -143,12 +146,7 @@ class LocationService : Service() {
      * - освободить MediaSession в уведомлении
      */
     override fun onDestroy() {
-        stopForeground(STOP_FOREGROUND_DETACH)
         super.onDestroy()
-        // Останавливаем обновления координат
-        fusedLocationClient.removeLocationUpdates(locationCallback)
-        // Освобождаем MediaSession, чтобы не держать системные ресурсы
-        notificationHelper.destroyMediaSession()
 
 
     }

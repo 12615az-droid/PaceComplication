@@ -21,7 +21,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.pacecomplication.modes.TrainingMode
 import com.example.pacecomplication.modes.WalkingMode
-import com.example.pacecomplication.RepositoryProvider
 import com.example.pacecomplication.WorkoutState
 import org.koin.androidx.compose.koinViewModel
 
@@ -54,20 +53,14 @@ data class TrainingUiState(
     val mode: TrainingMode,
     val workoutState: WorkoutState,
     val isGoalSetupOpen: Boolean,
+    val isTracking: Boolean,
 ) {
     val isWalking: Boolean get() = mode == WalkingMode
     val isModeChangeLocked: Boolean get() = workoutState == WorkoutState.ACTIVE
     val isSaveEnabled: Boolean get() = workoutState == WorkoutState.ACTIVE && timeMs > 0
 }
 
-data class TrainingActions(
-    val onStart: () -> Unit,
-    val onStop: () -> Unit,
-    val onSave: () -> Unit,
-    val onToggleMode: () -> Unit, // оставляем твой toggle, раз тебе так удобно
-     val onOpenGoalSetup: () -> Unit,
-    val onCloseGoalSetup: () -> Unit
-)
+
 
 
 /**
@@ -113,6 +106,7 @@ fun PaceScreen(
     val mode by viewModel.activityMode.collectAsState()
     val workoutState by viewModel.workoutState.collectAsState()
     val isGoalSetupOpen by viewModel.isGoalSetupOpen.collectAsState()
+    val isTracking by viewModel.isTracking.collectAsState()
 
 
 
@@ -122,29 +116,18 @@ fun PaceScreen(
         timeMs = timeMs,
         mode = mode,
         workoutState = workoutState,
-        isGoalSetupOpen = isGoalSetupOpen
+        isGoalSetupOpen = isGoalSetupOpen,
+        isTracking = isTracking
     )
 
-    val actions = TrainingActions(
-        onStart = viewModel.startTracking,
-        onStop = viewModel.onStopClick,
-        onSave = viewModel.onSaveClick,
-        onToggleMode = viewModel.onModeChanged,
-        onOpenGoalSetup = viewModel.onOpenGoalSetup,
-        onCloseGoalSetup = viewModel.onCloseGoalSetup
 
-    )
 
 
 
     if (workoutState == WorkoutState.IDLE)
-    PaceAppShell(
-        state,
-        actions
-    )
+    PaceAppShell()
     else
-        TrainingScreen(state,
-        actions)
+        TrainingScreen()
 }
 
 
@@ -177,7 +160,7 @@ fun PaceScreen(
  */
 @Composable
 fun PaceAppShell(
-    state: TrainingUiState, actions: TrainingActions) {
+    ) {
     // Контроллер навигации между экранами нижнего меню
     val navController = rememberNavController()
 
@@ -199,10 +182,7 @@ fun PaceAppShell(
         // NavHost — точка переключения экранов приложения
         AppNavHost(
             navController = navController,
-            modifier = Modifier.padding(innerPadding),
-            state =state,
-            actions = actions
-        )
+            modifier = Modifier.padding(innerPadding))
     }
 }
 
@@ -305,8 +285,6 @@ fun BottomBar(
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    state: TrainingUiState,
-    actions: TrainingActions,
 ) {
     // NavHost — контейнер, который отображает экран согласно текущему route
     NavHost(
@@ -321,7 +299,7 @@ fun AppNavHost(
                // state = state,
              //   actions = actions
            // )
-            TrainingSetupScreen(state , actions)
+            TrainingSetupScreen()
 
         }
 

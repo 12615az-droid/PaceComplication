@@ -26,6 +26,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,11 +35,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.pacecomplication.RepositoryProvider
 import com.example.pacecomplication.R
 import com.example.pacecomplication.WorkoutState
 import com.example.pacecomplication.timer.WorkoutTimer
 import com.example.pacecomplication.modes.WalkingMode
+import org.koin.androidx.compose.koinViewModel
 
 
 /**
@@ -84,11 +85,15 @@ fun getSignalStatus(accuracy: Float): SignalStatus {
 
 @Composable
 fun TrainingScreen(
-    state: TrainingUiState,
-    actions: TrainingActions,
+    viewModel: TrainingViewModel = koinViewModel()
 ) {
     // Определяем визуальный статус GPS-сигнала (цвет + текст)
-    val status = getSignalStatus(state.accuracy)
+    val pace by viewModel.currentPace.collectAsState(initial = "0:00")
+    val accuracy by viewModel.currentGPSAccuracy.collectAsState(initial = 0f)
+    val timeMs by viewModel.trainingTimeMs.collectAsState(initial = 0L)
+    val workoutState by viewModel.workoutState.collectAsState()
+    val isTracking by viewModel.isTracking.collectAsState()
+    val status = getSignalStatus(accuracy)
     val workTime = WorkoutTimer()
     Surface(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
 
@@ -104,24 +109,24 @@ fun TrainingScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            WorkoutStatsBlock(workTime.formatTimer(state.timeMs), 323)
+            WorkoutStatsBlock(workTime.formatTimer(timeMs), 323)
 
             Spacer(Modifier.height(24.dp))
 
             // Темп + точность + бейдж (визуальный статус сигнала)
             PaceStatusBlock(
-                pace = state.pace, accuracy = state.accuracy, status = status
+                pace = pace, accuracy = accuracy, status = status
             )
 
             Spacer(Modifier.height(24.dp))
 
             // Кнопки управления трекингом
             ControlButtons(
-                isTracking = (state.workoutState == WorkoutState.ACTIVE) && RepositoryProvider.locationRepository.isTracking.collectAsState().value,
-                onStartClick = actions.onStart,
-                onStopClick = actions.onStop,
-                onSaveClick = actions.onSave,
-                isSaveEnabled = state.isSaveEnabled
+                isTracking = isTracking,
+                onStartClick = {viewModel.startTracking()},
+                onStopClick = {viewModel.stopTracking()},
+                onSaveClick = {viewModel.saveTracking()},
+                isSaveEnabled = workoutState == WorkoutState.ACTIVE && timeMs > 0
             )
 
             Spacer(Modifier.height(24.dp))
@@ -305,19 +310,3 @@ fun ControlButtons(
     }
 }
 
-@Preview(showBackground = true, name = "Идеальный сигнал")
-@Composable
-fun PreviewTrainingGood() {
-    MaterialTheme {
-        TrainingScreen(
-            state = TrainingUiState(
-                pace = "5:40",
-                accuracy = 3f,
-                timeMs = 1751111,
-                mode = WalkingMode,
-                workoutState = WorkoutState.ACTIVE,
-                isGoalSetupOpen = false
-            ), TrainingActions({}, {}, {}, {}, {}, {})
-        )
-    }
-}
