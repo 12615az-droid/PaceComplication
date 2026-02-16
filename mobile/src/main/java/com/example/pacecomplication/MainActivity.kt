@@ -1,19 +1,15 @@
 package com.example.pacecomplication
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.content.Intent
-import android.os.Build
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.result.contract.ActivityResultContracts
+
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.example.pacecomplication.ui.PaceScreen
 import com.example.pacecomplication.ui.RunningAppTheme
-import org.koin.android.ext.android.inject
 
 
 /**
@@ -31,31 +27,6 @@ import org.koin.android.ext.android.inject
 class MainActivity : ComponentActivity() {
 
 
-
-    private val locationRepository: LocationRepository by inject()
-    // Лаунчер запроса разрешений. Callback вызывается системой после ответа пользователя.
-    // Если разрешения получены — запускаем трекинг и сервис.
-    private val locationPermissionRequest = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-        // Проверяем доступ к точной геолокации
-        // + на Android 13+ отдельно проверяем разрешение на уведомления
-
-    ) { permissions ->
-        val isFineGranted =
-            permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false)
-        val isNotificationGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissions.getOrDefault(Manifest.permission.POST_NOTIFICATIONS, false)
-        } else true
-
-        if (isFineGranted && isNotificationGranted) {
-            startPaceService()
-        }
-    }
-
-
-
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -69,7 +40,6 @@ class MainActivity : ComponentActivity() {
                     PaceScreen()
 
 
-
                 }
             }
         }
@@ -77,55 +47,5 @@ class MainActivity : ComponentActivity() {
 
     }
 
-    /**
-     * Запрашивает разрешения, необходимые для трекинга.
-     * - FINE/COARSE location
-     * - POST_NOTIFICATIONS (только Android 13+)
-     */
-    private fun requestPacePermissions() {
-        val permissionsNeeded = mutableListOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissionsNeeded.add(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        locationPermissionRequest.launch(permissionsNeeded.toTypedArray())
-    }
-
-    /**
-     * Запускает трекинг:
-     * - включает состояние в LocationRepository
-     * - запускает LocationService
-     */
-    private fun startPaceService() {
-         locationRepository.startTracking()
-        startService(Intent(this, LocationService::class.java))
-    }
-
-
-    /**
-     * Останавливает трекинг:
-     * - останавливает LocationService
-     * - сбрасывает состояние в LocationRepository
-     */
-    @SuppressLint("ImplicitSamInstance")
-    private fun stopPaceService() {
-        locationRepository.stopTracking()
-        stopService(Intent(this, LocationService::class.java))
-        LocationNotificationHelper(this).showNotification(
-            locationRepository.currentPace.value
-        )
-    }
-
-
-    private fun savePaceService() {
-        locationRepository.saveTracking()
-        stopService(Intent(this, LocationService::class.java))
-        LocationNotificationHelper(this).cancelNotification()
-
-
-
-    }
 
 }

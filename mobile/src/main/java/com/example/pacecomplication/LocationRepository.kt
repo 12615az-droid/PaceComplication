@@ -2,27 +2,27 @@ package com.example.pacecomplication
 
 
 import android.content.Context
+import android.content.Intent
 import android.location.Location
 import android.util.Log
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-
+import com.example.pacecomplication.modes.RunningMode
 import com.example.pacecomplication.modes.TrainingMode
 import com.example.pacecomplication.modes.TrainingModes
-import com.example.pacecomplication.modes.RunningMode
 import com.example.pacecomplication.pace.PaceCalculator
 import com.example.pacecomplication.pace.PaceUpdate
 import com.example.pacecomplication.pace.WearPaceSender
 import com.example.pacecomplication.timer.PaceTimer
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 
 enum class WorkoutState {
     IDLE, ACTIVE
 }
 
-   private const val STOP_THRESHOLD = 0.5f
-    private const val ACC_BAD_THRESHOLD = 35f
-    private const val PACE_DEFAULT = "0:00"
+private const val STOP_THRESHOLD = 0.5f
+private const val ACC_BAD_THRESHOLD = 35f
+private const val PACE_DEFAULT = "0:00"
 
 class LocationRepository(
     private val paceTimer: PaceTimer = PaceTimer(),
@@ -31,11 +31,9 @@ class LocationRepository(
     ),
     private val wearPaceSender: WearPaceSender = WearPaceSender(),
     private val context: Context
-)  {
+) {
 
-    private  val TAG = "PACE_DEBUG"
-
-
+    private val TAG = "PACE_DEBUG"
 
 
     // Состояние репозитория (наблюдаемое UI через StateFlow):
@@ -65,10 +63,6 @@ class LocationRepository(
     val trainingTimeMs = paceTimer.trainingTimeMs
 
 
-
-
-
-
     // --- УПРАВЛЕНИЕ ---
 
     /**
@@ -93,31 +87,90 @@ class LocationRepository(
      * - ставит isTracking = true
      * - сбрасывает EMA-фильтр, чтобы новый трек начинался "с нуля"
      */
+
+
+    // Внутри LocationRepository
+
     fun startTracking() {
+        // 1. Сразу меняем UI, не ждем сервиса
+        forceStartState()
+
+        // 2. Запускаем сервис
+        sendStartCommand()
+    }
+
+    fun forceStartState() {
+        // Убираем проверку "if (ACTIVE) return", она мешает, если сервис перезапускается
         _isTracking.value = true
         _workoutState.value = WorkoutState.ACTIVE
         paceTimer.start()
-        paceCalculator.reset()
+        if (_workoutState.value == WorkoutState.IDLE) {
+            paceCalculator.reset()
+        }
     }
 
-    /**
-     * Останавливает трекинг.
-     *
-     * Что делает:
-     * - ставит isTracking = false
-     * - сбрасывает текущую точность GPS в 0 (нет сигнала/неактивно)
-     */
+    private fun sendStartCommand() {
+        val intent = Intent(context, LocationService::class.java)
+        intent.action = "START"
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
+    }
+
+// --- СТОП ---
+
     fun stopTracking() {
+        // 1. Сразу гасим UI
+        forceStopState()
+
+        // 2. Шлем команду сервису
+        sendStopCommand()
+    }
+
+    fun forceStopState() {
         _isTracking.value = false
         _currentGPSAccuracy.value = 0f
         paceTimer.stop()
     }
 
-    fun saveTracking() {
-        stopTracking()
-         paceTimer.reset()
-        _workoutState.value = WorkoutState.IDLE
+    private fun sendStopCommand() {
+        val intent = Intent(context, LocationService::class.java)
+        intent.action = "STOP"
 
+        // ВАЖНО: Используем startService, чтобы доставить команду "STOP" в onStartCommand!
+        // Если вызвать stopService, то onStartCommand НЕ СРАБОТАЕТ.
+        context.startForegroundService(intent)
+    }
+
+    fun saveTracking() {
+        // 1. УБИВАЕМ СЕРВИС (Первым делом!)
+        // Шлем команду "STOP", чтобы он отписался от GPS и убрал уведомление.
+        val intent = Intent(context, LocationService::class.java)
+        intent.action = "KILL" // <--- НОВАЯ КОМАНДА
+        // Используем startService для доставки команды (как мы обсуждали)
+        context.startForegroundService(intent)
+
+        // 2. ОСТАНАВЛИВАЕМ (но не стираем) таймер
+        // Чтобы данные не менялись, пока мы "сохраняем"
+        paceTimer.stop()
+        _isTracking.value = false
+
+        // --- (Здесь будет код сохранения в БД, когда ты его напишешь) ---
+        // val finalDistance = paceCalculator.totalDistance
+        // database.save(finalDistance, paceTimer.elapsedTime)
+
+        // 3. ЗАЧИСТКА (Сброс в ноль)
+        // Делаем это ПОСЛЕ того, как всё остановили
+        paceCalculator.reset()
+        paceTimer.reset()
+        _currentGPSAccuracy.value = 0f
+
+        // 4. ПЕРЕКЛЮЧАЕМ РЕЖИМ (Финал)
+        // Только теперь говорим UI: "Всё, покажи стартовый экран"
+        _workoutState.value = WorkoutState.IDLE
     }
 
 

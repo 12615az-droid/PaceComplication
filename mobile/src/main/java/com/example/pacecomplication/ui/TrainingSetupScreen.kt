@@ -34,13 +34,9 @@ fun TrainingSetupScreen(
     modifier: Modifier = Modifier,
     viewModel: TrainingViewModel = koinViewModel()
 ) {
-    val pace by viewModel.currentPace.collectAsState(initial = "0:00")
-    val accuracy by viewModel.currentGPSAccuracy.collectAsState(initial = 0f)
-    val timeMs by viewModel.trainingTimeMs.collectAsState(initial = 0L)
     val mode by viewModel.activityMode.collectAsState()
-    val workoutState by viewModel.workoutState.collectAsState()
     val isGoalSetupOpen by viewModel.isGoalSetupOpen.collectAsState()
-    val isTracking by viewModel.isTracking.collectAsState()
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -52,7 +48,7 @@ fun TrainingSetupScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            GoalsDialog(isGoalSetupOpen, {viewModel.onCloseGoalSetup()} , {})
+            GoalsDialog(isGoalSetupOpen, { viewModel.onCloseGoalSetup() }, {})
 
             SetupHeader()
 
@@ -61,13 +57,13 @@ fun TrainingSetupScreen(
 
             ModeSelectionCard(
                 isWalking = mode == WalkingMode,
-                onModeToggle = {viewModel.onModeChanged()}
+                onModeToggle = { viewModel.onModeChanged() }
             )
 
             Spacer(Modifier.height(16.dp))
 
             GoalsSelectionCard(
-                onClick = {viewModel.onOpenGoalSetup()}
+                onClick = { viewModel.onOpenGoalSetup() }
             )
 
             Spacer(Modifier.height(16.dp))
@@ -77,7 +73,7 @@ fun TrainingSetupScreen(
             Spacer(Modifier.weight(1f))
 
             StartWorkoutButton(
-                onClick = {viewModel.startTracking()}
+                onClick = { viewModel.startTracking() }
             )
 
             Spacer(Modifier.height(16.dp))
@@ -149,6 +145,7 @@ private fun ModeSelectionCard(
         }
     }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModeSelector(
@@ -183,8 +180,6 @@ fun ModeSelector(
         }
     }
 }
-
-
 
 
 @Composable

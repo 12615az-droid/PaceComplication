@@ -1,5 +1,7 @@
 package com.example.pacecomplication.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
@@ -23,7 +25,10 @@ import com.example.pacecomplication.modes.TrainingMode
 import com.example.pacecomplication.modes.WalkingMode
 import com.example.pacecomplication.WorkoutState
 import org.koin.androidx.compose.koinViewModel
-
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.runtime.LaunchedEffect
 
 /**
  * Описание вкладок нижней навигации (Bottom Navigation).
@@ -45,22 +50,6 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
 
 /* Список вкладок, которые показываем в NavigationBar (внизу) */
 private val bottomItems = listOf(Screen.Training, Screen.History, Screen.Settings)
-
-data class TrainingUiState(
-    val pace: String,
-    val accuracy: Float,
-    val timeMs: Long,
-    val mode: TrainingMode,
-    val workoutState: WorkoutState,
-    val isGoalSetupOpen: Boolean,
-    val isTracking: Boolean,
-) {
-    val isWalking: Boolean get() = mode == WalkingMode
-    val isModeChangeLocked: Boolean get() = workoutState == WorkoutState.ACTIVE
-    val isSaveEnabled: Boolean get() = workoutState == WorkoutState.ACTIVE && timeMs > 0
-}
-
-
 
 
 /**
@@ -98,36 +87,39 @@ fun PaceScreen(
     viewModel: TrainingViewModel = koinViewModel()
 ) {
 
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        // Логика проверки (то, что было у тебя в MainActivity)
+        val isFineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val isNotificationGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions[Manifest.permission.POST_NOTIFICATIONS] == true
+        } else true
 
+        if (isFineGranted && isNotificationGranted) {
+            // Если дали добро — командуем модели "Газ!"
+            viewModel.startTracking()
+        } else {
+            // Тут можно показать Toast "Нужны разрешения для работы"
+        }
+    }
 
-   val pace by viewModel.currentPace.collectAsState(initial = "0:00")
-    val accuracy by viewModel.currentGPSAccuracy.collectAsState(initial = 0f)
-    val timeMs by viewModel.trainingTimeMs.collectAsState(initial = 0L)
-    val mode by viewModel.activityMode.collectAsState()
+    // 2. Список нужных разрешений
+    val permissionsToRequest = mutableListOf(
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION
+    ).apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }.toTypedArray()
+
     val workoutState by viewModel.workoutState.collectAsState()
-    val isGoalSetupOpen by viewModel.isGoalSetupOpen.collectAsState()
-    val isTracking by viewModel.isTracking.collectAsState()
 
 
 
-    val state = TrainingUiState(
-        pace = pace,
-        accuracy = accuracy,
-        timeMs = timeMs,
-        mode = mode,
-        workoutState = workoutState,
-        isGoalSetupOpen = isGoalSetupOpen,
-        isTracking = isTracking
-    )
-
-
-
-
-
-    if (workoutState == WorkoutState.IDLE)
-    PaceAppShell()
-    else
-        TrainingScreen()
+    if (workoutState == WorkoutState.IDLE) PaceAppShell()
+    else TrainingScreen()
 }
 
 
@@ -160,7 +152,7 @@ fun PaceScreen(
  */
 @Composable
 fun PaceAppShell(
-    ) {
+) {
     // Контроллер навигации между экранами нижнего меню
     val navController = rememberNavController()
 
@@ -170,19 +162,17 @@ fun PaceAppShell(
         // Нижняя панель навигации (переключение вкладок)
         bottomBar = {
             BottomBar(
-                navController = navController,
-                items = bottomItems
+                navController = navController, items = bottomItems
             )
-        }
-    ) {
+        }) {
         // innerPadding учитывает высоту нижней навигации
         // и предотвращает перекрытие контента
             innerPadding ->
 
         // NavHost — точка переключения экранов приложения
         AppNavHost(
-            navController = navController,
-            modifier = Modifier.padding(innerPadding))
+            navController = navController, modifier = Modifier.padding(innerPadding)
+        )
     }
 }
 
@@ -210,8 +200,7 @@ fun PaceAppShell(
  */
 @Composable
 fun BottomBar(
-    navController: androidx.navigation.NavHostController,
-    items: List<Screen>
+    navController: androidx.navigation.NavHostController, items: List<Screen>
 ) {
     // NavigationBar — контейнер нижнего меню (Material 3)
     NavigationBar {
@@ -246,8 +235,7 @@ fun BottomBar(
                         // Восстанавливаем сохранённое состояние вкладки
                         restoreState = true
                     }
-                }
-            )
+                })
         }
     }
 }
@@ -290,15 +278,14 @@ fun AppNavHost(
     NavHost(
         navController = navController,
         // Экран, который открывается при старте приложения
-        startDestination = Screen.Training.route,
-        modifier = modifier
+        startDestination = Screen.Training.route, modifier = modifier
     ) {
         composable(Screen.Training.route) {
             // Главный экран тренировки
-          // TrainingScreen(
-               // state = state,
-             //   actions = actions
-           // )
+            // TrainingScreen(
+            // state = state,
+            //   actions = actions
+            // )
             TrainingSetupScreen()
 
         }

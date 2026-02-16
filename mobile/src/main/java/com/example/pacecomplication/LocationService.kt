@@ -1,164 +1,143 @@
 package com.example.pacecomplication
 
 import android.annotation.SuppressLint
-import android.app.*
+import android.app.NotificationManager
+import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.os.*
-
-import com.google.android.gms.location.*
+import android.os.Build
+import android.os.IBinder
+import android.os.Looper
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import org.koin.android.ext.android.inject
 
-
-/**
- * LocationService — foreground service для трекинга локации.
- *
- * Назначение:
- * - запускается из MainActivity после получения разрешений
- * - запрашивает обновления геолокации через FusedLocationProviderClient
- * - обновляет расчёт темпа/статуса через LocationRepository
- * - держит постоянное уведомление (foreground notification), чтобы сервис не был убит системой
- *
- * Зависимости:
- * - LocationRepository: расчёт темпа и хранение состояния
- * - LocationNotificationHelper: канал и уведомление
- * - TelemetryLogger: отладочная запись телеметрии
- *
- * Требования:
- * - разрешения на геолокацию должны быть выданы до запуска сервиса
- * - сервис запускается как foreground и показывает ongoing уведомление
- */
 class LocationService : Service() {
 
-    // Google Fused Location Provider — источник локации
+    // 1. ИНЪЕКЦИЯ: Берем готовые инструменты через Koin
+    // (Убедись, что LocationNotificationHelper добавлен в AppModule)
     private val locationRepository: LocationRepository by inject()
+    private val notificationHelper: LocationNotificationHelper by inject()
 
-    // Callback, куда приходят обновления локации
-   private lateinit var fusedLocationClient: FusedLocationProviderClient
-   private lateinit var locationCallback: LocationCallback
-
-    // Сборка уведомления foreground-сервиса
-    private lateinit var notificationHelper: LocationNotificationHelper
-
-    // Отладочный логгер телеметрии (Logcat + файл)
+    // Если Logger простой и нужен Context, можно оставить создание руками,
+    // но лучше тоже через inject, если он в модуле. Пока оставим так:
     private lateinit var logger: TelemetryLogger
 
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var locationCallback: LocationCallback
 
-
-
-
-
-
-
-    /**
-     * Инициализация сервиса.
-     *
-     * Здесь создаём все зависимости:
-     * - notification helper + канал уведомлений
-     * - logger
-     * - init репозитория (контекст)
-     * - fusedLocationClient
-     * - callback логика обработки локации
-     */
     override fun onCreate() {
         super.onCreate()
-        notificationHelper = LocationNotificationHelper(this)
         logger = TelemetryLogger(this)
-        locationRepository.init(this)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        notificationHelper.createNotificationChannel()
-        // Подготовка callback-логики до старта updates
+
+        // Настраиваем логику callback (но пока не запускаем)
         setupLocationLogic()
     }
 
-
     /**
-     * Настраивает обработку входящих координат (LocationCallback).
-     *
-     * Логика:
-     * - для каждой пришедшей Location обновляем темп через LocationRepository
-     * - пишем отладочную телеметрию (темп + точность)
+     * ГЛАВНЫЙ ПУЛЬТ УПРАВЛЕНИЯ
+     * Сюда приходят команды из LocationRepository: "START" или "STOP"
      */
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val action = intent?.action
+
+        when (action) {
+            "START" -> {
+                // Синхронизируем состояние (на случай, если старт был из шторки, а не из UI)
+                // Это безопасно, так как мы убрали "return" в репозитории
+                locationRepository.forceStartState()
+
+                val notification = notificationHelper.getNotification("0:00")
+
+                // Запускаем Foreground
+                if (Build.VERSION.SDK_INT >= 34) {
+                    startForeground(
+                        LocationNotificationHelper.NOTIFICATION_ID,
+                        notification,
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+                    )
+                } else {
+                    startForeground(LocationNotificationHelper.NOTIFICATION_ID, notification)
+                }
+
+                startLocationUpdates()
+            }
+
+            "STOP" -> {
+                locationRepository.forceStopState()
+                stopLocationUpdates()
+                val pausedNotification = notificationHelper.getNotification("Пауза")
+                val manager = getSystemService(NotificationManager::class.java)
+                manager.notify(LocationNotificationHelper.NOTIFICATION_ID, pausedNotification)
+
+            }
+
+            "KILL" -> {
+                // --- РЕЖИМ ВЫХОДА (Save) ---
+                // Вот теперь убиваем всё
+                stopLocationUpdates()
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+                notificationHelper.cancelNotification()
+                // Или showFinalNotification, если хочешь оставить результат
+            }
+        }
+        return START_STICKY
+    }
+
     private fun setupLocationLogic() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 for (location in locationResult.locations) {
-                      val paceUpdate = locationRepository.updatePace(location)
-                    logger.log("SmoothPACE: ${paceUpdate?.paceValue} | ACC: ${location.accuracy}")
-                    updateForegroundNotification(paceUpdate?.paceText)
+                    // Передаем данные в репозиторий
+                    val paceUpdate = locationRepository.updatePace(location)
+
+                    // Пишем логи
+                    logger.log("Pace: ${paceUpdate?.paceValue} | Acc: ${location.accuracy}")
+
+                    // Обновляем уведомление (то, что было в stopPaceService)
+                    updateNotification(paceUpdate?.paceText)
                 }
             }
         }
     }
 
-    private fun updateForegroundNotification(pace: String?) {
-         if (pace.isNullOrBlank()) return
-        val notification = notificationHelper.getNotification(pace)
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.notify(LocationNotificationHelper.NOTIFICATION_ID, notification)
+    private fun updateNotification(text: String?) {
+        if (text.isNullOrBlank()) return
+        notificationHelper.showNotification(text) // Используем метод хелпера
     }
 
-    /**
-     * Запуск сервиса.
-     *
-     * Что происходит:
-     * - формируем уведомление и поднимаем сервис в foreground
-     * - запускаем обновления геолокации
-     *
-     * Возвращает START_STICKY:
-     * - система может перезапустить сервис после убийства процесса
-     */
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val notification = notificationHelper.getNotification("0:00")
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(
-                LocationNotificationHelper.NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
-            )
-        } else {
-            startForeground(LocationNotificationHelper.NOTIFICATION_ID, notification)
-        }
-        startLocationUpdates()
-        return START_STICKY
-    }
-
-
-
-    /**
-     * Запускает запрос обновлений геолокации.
-     *
-     * Используем высокий приоритет и период 1 сек (1000 мс).
-     * Требует выданных разрешений на геолокацию (иначе SecurityException).
-     */
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
-        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000).build()
-        fusedLocationClient.requestLocationUpdates(request, locationCallback, Looper.getMainLooper())
+        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000)
+            .setMinUpdateIntervalMillis(500).build()
+
+        fusedLocationClient.requestLocationUpdates(
+            request, locationCallback, Looper.getMainLooper()
+
+
+        )
     }
 
-    /**
-     * Освобождение ресурсов при остановке сервиса.
-     *
-     * Важно:
-     * - обязательно снять подписку на обновления локации
-     * - освободить MediaSession в уведомлении
-     */
+    private fun stopLocationUpdates() {
+        // Важно: отписываемся от GPS, чтобы не жрать батарею
+        if (::locationCallback.isInitialized) {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-
-
+        // ФИНАЛЬНАЯ ЗАЧИСТКА
+        stopLocationUpdates()
+        notificationHelper.cancelNotification() // Убираем уведомление совсем
+        notificationHelper.destroyMediaSession()
     }
 
-
-
-    /**
-     * Binding не поддерживается — сервис запускается только через startService().
-     */
     override fun onBind(intent: Intent?): IBinder? = null
 }
-
-
-
-

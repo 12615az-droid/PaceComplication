@@ -20,7 +20,7 @@ class TrainingViewModel(
     val activityMode = repository.activityMode
     val workoutState = repository.workoutState
     val isGoalSetupOpen = repository.isGoalSetupOpen
-    // val currentMode = repository.currentMode // раскомментируй, если есть
+
 
     val isTracking = repository.isTracking
 
@@ -36,9 +36,6 @@ class TrainingViewModel(
 
     fun closeGoalSetupDialog() = repository.setTrainingGoalDialogOpen(false)
 
-    fun onStopClick() = stopTracking()
-
-    fun onSaveClick() = saveTracking()
 
     fun onModeChanged() = changeMode()
 

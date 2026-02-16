@@ -1,13 +1,13 @@
 package com.example.pacecomplication
 
-import android.app.*
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.support.v4.media.session.MediaSessionCompat
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-
-
 import androidx.core.app.NotificationCompat
 
 /**
@@ -77,37 +77,31 @@ class LocationNotificationHelper(private val context: Context) {
         val pendingIntent =
             PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 
+
+        val startPendingIntent = createServiceAction("START", 10)
+
+        // 3. Интент для кнопки "СТОП" (шлёт команду STOP в сервис)
+        val stopPendingIntent = createServiceAction("STOP", 11)
         // MediaSession создаём один раз (лениво), чтобы не плодить объекты при обновлении уведомления
-        if (mediaSession == null)
-            mediaSession = MediaSessionCompat(context, "pace_session")
+        if (mediaSession == null) mediaSession = MediaSessionCompat(context, "pace_session")
 
         // OnlyAlertOnce — не "пикает" при обновлениях.
         // Ongoing — нельзя смахнуть, пока идёт трекинг (foreground service).
         // MediaStyle — отображает кнопки действий как у музыкального плеера.
 
         val contentText = buildNotificationText(pace)
-        return NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle("Pace Tracker")
-            .setContentText(contentText)
-            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
-            .setContentIntent(pendingIntent)
-            .setOnlyAlertOnce(true)
-            .setOngoing(true).setStyle(
-                androidx.media.app.NotificationCompat.MediaStyle()
-                    .setMediaSession(mediaSession?.sessionToken
-                        ).setShowActionsInCompactView(0, 1)
+        return NotificationCompat.Builder(context, CHANNEL_ID).setContentTitle("Pace Tracker")
+            .setContentText(contentText).setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .setContentIntent(pendingIntent).setOnlyAlertOnce(true).setOngoing(true).setStyle(
+                androidx.media.app.NotificationCompat.MediaStyle().setMediaSession(
+                        mediaSession?.sessionToken
+                    ).setShowActionsInCompactView(0, 1)
             ).addAction(
-                android.R.drawable.ic_media_play,
-                "Старт",
-                null
-            )
-            .addAction(
-                android.R.drawable.ic_media_pause,
-                "Стоп",
-                null
+                android.R.drawable.ic_media_play, "Старт", startPendingIntent
+            ).addAction(
+                android.R.drawable.ic_media_pause, "Стоп", stopPendingIntent
 
-            )
-            .build()
+            ).build()
     }
 
 
@@ -121,6 +115,16 @@ class LocationNotificationHelper(private val context: Context) {
         val notification = getNotification(pace)
         val manager = context.getSystemService(NotificationManager::class.java)
         manager.notify(NOTIFICATION_ID, notification)
+    }
+
+    private fun createServiceAction(action: String, requestCode: Int): PendingIntent {
+        val intent = Intent(context, LocationService::class.java).apply {
+            this.action = action
+        }
+        return PendingIntent.getService(
+            context, requestCode, // Важно: разные ID для разных кнопок!
+            intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
     }
 
     /**
