@@ -65,29 +65,6 @@ class LocationRepository(
 
     // --- УПРАВЛЕНИЕ ---
 
-    /**
-     * Инициализация репозитория.
-     *
-     * Нужна для подключения Wear OS DataClient.
-     * Важно использовать applicationContext, чтобы избежать утечек памяти.
-     *
-     * Вызывать один раз при старте сервиса/приложения.
-     *
-     * @param context любой Context, внутри будет взят applicationContext
-     */
-    fun init(context: Context) {
-        // Используем applicationContext, чтобы не было утечек памяти
-        wearPaceSender.init(context)
-    }
-
-    /**
-     * Включает режим трекинга.
-     *
-     * Что делает:
-     * - ставит isTracking = true
-     * - сбрасывает EMA-фильтр, чтобы новый трек начинался "с нуля"
-     */
-
 
     // Внутри LocationRepository
 

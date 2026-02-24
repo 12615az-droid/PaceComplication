@@ -71,17 +71,26 @@ class LocationNotificationHelper(private val context: Context) {
      *
      * @return Notification для использования в startForeground()
      */
-    fun getNotification(pace: String?): Notification {
+    fun getNotification(pace: String?, accuracy: Float): Notification {
         // Клик по уведомлению открывает MainActivity
         val intent = Intent(context, MainActivity::class.java)
         val pendingIntent =
             PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 
+        val colorArgb = when {
+            accuracy <= 0f -> 0xFF888888.toInt()  // Аналог Compose Color.Gray
+            accuracy <= 8f -> 0xFF00FF00.toInt()  // Аналог Compose Color.Green
+            accuracy <= 20f -> 0xFFFFC107.toInt() // Твой кастомный желтый
+            else -> 0xFFFF0000.toInt()            // Аналог Compose Color.Red
+        }
+
+        // 2. ГЕНЕРИРУЕМ "ОБЛОЖКУ"
 
         val startPendingIntent = createServiceAction("START", 10)
 
         // 3. Интент для кнопки "СТОП" (шлёт команду STOP в сервис)
         val stopPendingIntent = createServiceAction("STOP", 11)
+        val colorBitmap = createColorBitmap(colorArgb)
         // MediaSession создаём один раз (лениво), чтобы не плодить объекты при обновлении уведомления
         if (mediaSession == null) mediaSession = MediaSessionCompat(context, "pace_session")
 
@@ -92,16 +101,24 @@ class LocationNotificationHelper(private val context: Context) {
         val contentText = buildNotificationText(pace)
         return NotificationCompat.Builder(context, CHANNEL_ID).setContentTitle("Pace Tracker")
             .setContentText(contentText).setSmallIcon(android.R.drawable.ic_menu_mylocation)
-            .setContentIntent(pendingIntent).setOnlyAlertOnce(true).setOngoing(true).setStyle(
-                androidx.media.app.NotificationCompat.MediaStyle().setMediaSession(
-                        mediaSession?.sessionToken
-                    ).setShowActionsInCompactView(0, 1)
-            ).addAction(
+            .setContentIntent(pendingIntent).setOnlyAlertOnce(true).setOngoing(true)
+            .addAction(
                 android.R.drawable.ic_media_play, "Старт", startPendingIntent
             ).addAction(
                 android.R.drawable.ic_media_pause, "Стоп", stopPendingIntent
+            )
+            .setLargeIcon(colorBitmap) // Скармливаем цветную точку
+            .setColor(colorArgb)       // Дублируем цвет для мелких деталей
+            // -------------------------
 
+            // ВОЗВРАЩАЕМ ПЛЕЕР
+            .setStyle(
+                androidx.media.app.NotificationCompat.MediaStyle()
+                    .setMediaSession(mediaSession?.sessionToken)
+                    .setShowActionsInCompactView(0, 1) // Кнопки видны всегда
             ).build()
+
+
     }
 
 
@@ -110,9 +127,17 @@ class LocationNotificationHelper(private val context: Context) {
         manager.cancel(NOTIFICATION_ID)
     }
 
+    private fun createColorBitmap(colorArgb: Int): android.graphics.Bitmap {
+        val bitmap =
+            android.graphics.Bitmap.createBitmap(1, 1, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        canvas.drawColor(colorArgb)
+        return bitmap
+    }
 
-    fun showNotification(pace: String?) {
-        val notification = getNotification(pace)
+
+    fun showNotification(pace: String?, accuracy: Float) {
+        val notification = getNotification(pace, accuracy)
         val manager = context.getSystemService(NotificationManager::class.java)
         manager.notify(NOTIFICATION_ID, notification)
     }
@@ -144,6 +169,7 @@ class LocationNotificationHelper(private val context: Context) {
 
 private fun buildNotificationText(paceMinPerKm: String?): String {
     val paceText = paceMinPerKm?.takeIf { it.isNotBlank() } ?: "--:--"
+    if (paceMinPerKm == "Пауза") return "Пауза"
     return "Темп: $paceText/км"
 }
 

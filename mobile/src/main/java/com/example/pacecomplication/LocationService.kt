@@ -1,5 +1,6 @@
 package com.example.pacecomplication
 
+import SensorTracker
 import android.annotation.SuppressLint
 import android.app.NotificationManager
 import android.app.Service
@@ -22,6 +23,7 @@ class LocationService : Service() {
     // (Убедись, что LocationNotificationHelper добавлен в AppModule)
     private val locationRepository: LocationRepository by inject()
     private val notificationHelper: LocationNotificationHelper by inject()
+    private val sensorTracker: SensorTracker by inject()
 
     // Если Logger простой и нужен Context, можно оставить создание руками,
     // но лучше тоже через inject, если он в модуле. Пока оставим так:
@@ -51,8 +53,10 @@ class LocationService : Service() {
                 // Синхронизируем состояние (на случай, если старт был из шторки, а не из UI)
                 // Это безопасно, так как мы убрали "return" в репозитории
                 locationRepository.forceStartState()
+                sensorTracker.startTracking()
+                
 
-                val notification = notificationHelper.getNotification("0:00")
+                val notification = notificationHelper.getNotification("0:00", 0f)
 
                 // Запускаем Foreground
                 if (Build.VERSION.SDK_INT >= 34) {
@@ -70,8 +74,9 @@ class LocationService : Service() {
 
             "STOP" -> {
                 locationRepository.forceStopState()
+                sensorTracker.stopTracking()
                 stopLocationUpdates()
-                val pausedNotification = notificationHelper.getNotification("Пауза")
+                val pausedNotification = notificationHelper.getNotification("Пауза", 0f)
                 val manager = getSystemService(NotificationManager::class.java)
                 manager.notify(LocationNotificationHelper.NOTIFICATION_ID, pausedNotification)
 
@@ -81,6 +86,7 @@ class LocationService : Service() {
                 // --- РЕЖИМ ВЫХОДА (Save) ---
                 // Вот теперь убиваем всё
                 stopLocationUpdates()
+                sensorTracker.stopTracking()
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
                 notificationHelper.cancelNotification()
@@ -101,15 +107,15 @@ class LocationService : Service() {
                     logger.log("Pace: ${paceUpdate?.paceValue} | Acc: ${location.accuracy}")
 
                     // Обновляем уведомление (то, что было в stopPaceService)
-                    updateNotification(paceUpdate?.paceText)
+                    updateNotification(paceUpdate?.paceText, location.accuracy)
                 }
             }
         }
     }
 
-    private fun updateNotification(text: String?) {
+    private fun updateNotification(text: String?, accuracy: Float) {
         if (text.isNullOrBlank()) return
-        notificationHelper.showNotification(text) // Используем метод хелпера
+        notificationHelper.showNotification(text, accuracy) // Используем метод хелпера
     }
 
     @SuppressLint("MissingPermission")
