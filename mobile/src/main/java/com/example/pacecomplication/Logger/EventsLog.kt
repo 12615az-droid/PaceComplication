@@ -1,7 +1,6 @@
 package com.example.pacecomplication.Logger
 
-import com.example.pacecomplication.WorkoutState
-import com.example.pacecomplication.modes.TrainingMode
+import com.example.pacecomplication.Logger.LogJson.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -14,6 +13,10 @@ object LogJson {
         classDiscriminator = "kind" // в JSON появится "kind": "app" или "session"
     }
 }
+
+
+fun toJsonLine(entry: EventLogEntry): String =
+    json.encodeToString(EventLogEntry.serializer(), entry)
 
 @Serializable
 enum class TypeEvent {
@@ -51,19 +54,15 @@ data class AppEventData(
     override val tNs: Long,
     override val sessionId: String? = null,
 
-    // optional context
     val screen: String? = null,
-    val workoutState: WorkoutState? = null,
+    val workoutState: String? = null,   // <-- было WorkoutState?
 
-    // permissions
     val permission: String? = null,
     val granted: Boolean? = null,
 
-    // errors
     val errorMessage: String? = null,
     val errorStack: String? = null,
 
-    // any extra, compact info
     val note: String? = null
 ) : EventData
 
@@ -73,14 +72,12 @@ data class SessionEventData(
     override val tNs: Long,
     override val sessionId: String,
 
-    val workoutState: WorkoutState,
+    val workoutState: String,           // <-- было WorkoutState
     val isTracking: Boolean,
-    val activityMode: TrainingMode,
+    val activityMode: String,           // <-- было TrainingMode
 
-    // UI snapshot (event-level)
-    val paceText: String? = null,        // строка как у тебя сейчас
-    val trainingTimeMs: Long? = null,    // _trainingTimeMs.value на момент события
-
+    val paceText: String? = null,
+    val trainingTimeMs: Long? = null,
     val gpsAccuracyM: Float? = null,
 
     val note: String? = null
