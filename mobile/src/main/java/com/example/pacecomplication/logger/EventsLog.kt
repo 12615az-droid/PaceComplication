@@ -1,6 +1,7 @@
 package com.example.pacecomplication.logger
 
 
+import com.example.pacecomplication.WorkoutState
 import com.example.pacecomplication.logger.LogJson.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -38,7 +39,7 @@ sealed interface EventPayload
 @SerialName("app")
 data class AppEventData(
     val screen: String? = null,
-    val workoutState: String? = null,
+    val workoutState: WorkoutState? = null,
     val permission: String? = null,
     val granted: Boolean? = null,
     val errorMessage: String? = null,
@@ -49,7 +50,7 @@ data class AppEventData(
 @Serializable
 @SerialName("session")
 data class SessionEventData(
-    val workoutState: String,
+    val workoutState: WorkoutState,
     val isTracking: Boolean,
     val activityMode: String,
     val paceText: String? = null,

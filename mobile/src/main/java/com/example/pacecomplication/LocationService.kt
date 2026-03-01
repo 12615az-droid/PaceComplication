@@ -9,7 +9,10 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
+import com.example.pacecomplication.logger.AppEventData
 import com.example.pacecomplication.logger.EventsLog
+import com.example.pacecomplication.logger.SourceEvent
+import com.example.pacecomplication.logger.TypeEvent
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -19,6 +22,7 @@ import com.google.android.gms.location.Priority
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 
 class LocationService : Service() {
@@ -56,16 +60,11 @@ class LocationService : Service() {
 
         when (action) {
             "START" -> {
-
-                // Синхронизируем состояние (на случай, если старт был из шторки, а не из UI)
-                // Это безопасно, так как мы убрали "return" в репозитории
                 locationRepository.forceStartState()
                 sensorTracker.startTracking()
 
-
                 val notification = notificationHelper.getNotification("0:00", 0f)
 
-                // Запускаем Foreground
                 if (Build.VERSION.SDK_INT >= 34) {
                     startForeground(
                         LocationNotificationHelper.NOTIFICATION_ID,
@@ -77,34 +76,80 @@ class LocationService : Service() {
                 }
 
                 startLocationUpdates()
+
+                logServiceEvent(
+                    type = TypeEvent.SERVICE_STARTED,
+                    origin = "LocationService.onStartCommand.START",
+                    note = "Foreground location service started"
+                )
             }
 
             "STOP" -> {
-
                 locationRepository.forceStopState()
                 sensorTracker.stopTracking()
                 stopLocationUpdates()
+
                 val pausedNotification = notificationHelper.getNotification("Пауза", 0f)
                 val manager = getSystemService(NotificationManager::class.java)
                 manager.notify(LocationNotificationHelper.NOTIFICATION_ID, pausedNotification)
 
+                logServiceEvent(
+                    type = TypeEvent.SERVICE_STOPPED,
+                    origin = "LocationService.onStartCommand.STOP",
+                    note = "Foreground location service paused"
+                )
             }
 
             "KILL" -> {
-
-                // --- РЕЖИМ ВЫХОДА (Save) ---
-                // Вот теперь убиваем всё
                 stopLocationUpdates()
                 sensorTracker.stopTracking()
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
                 notificationHelper.cancelNotification()
-                // Или showFinalNotification, если хочешь оставить результат
+
+                logServiceEvent(
+                    type = TypeEvent.SERVICE_STOPPED,
+                    origin = "LocationService.onStartCommand.KILL",
+                    note = "Foreground location service killed"
+                )
+            }
+
+            else -> {
+                serviceScope.launch {
+                    eventsLog.log(
+                        type = TypeEvent.ERROR,
+                        source = SourceEvent.SYSTEM, // тут можно SYSTEM, но я бы оставил SERVICE
+                        origin = "LocationService.onStartCommand.unknown",
+                        sessionId = null,
+                        data = AppEventData(
+                            workoutState = locationRepository.workoutState.value,
+                            note = "Unknown action: $action"
+                        )
+                    )
+                }
             }
         }
         return START_STICKY
     }
 
+    private fun logServiceEvent(
+        type: TypeEvent,
+        origin: String,
+        note: String
+    ) {
+        serviceScope.launch {
+            eventsLog.log(
+                type = type,
+                source = SourceEvent.SERVICE,
+                origin = origin,
+                sessionId = null, // <- сервисные события всегда app-log
+                data = AppEventData(
+                    workoutState = locationRepository.workoutState.value,
+                    note = note
+                )
+            )
+        }
+    }
 
     private fun setupLocationLogic() {
         locationCallback = object : LocationCallback() {

@@ -6,7 +6,11 @@ import android.content.Intent
 import android.location.Location
 import android.util.Log
 import com.example.pacecomplication.history.SessionIdGenerator
+import com.example.pacecomplication.logger.AppEventData
 import com.example.pacecomplication.logger.EventsLog
+import com.example.pacecomplication.logger.SessionEventData
+import com.example.pacecomplication.logger.SourceEvent
+import com.example.pacecomplication.logger.TypeEvent
 import com.example.pacecomplication.modes.RunningMode
 import com.example.pacecomplication.modes.TrainingMode
 import com.example.pacecomplication.modes.TrainingModes
@@ -19,8 +23,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 
-
+@Serializable
 enum class WorkoutState {
     IDLE, ACTIVE
 }
@@ -99,6 +105,59 @@ class LocationRepository(
         if (_workoutState.value == WorkoutState.IDLE) {
             paceCalculator.reset()
         }
+        logStateEvent(
+            type = TypeEvent.WORKOUT_STARTED,
+            source = SourceEvent.SERVICE,
+            origin = "LocationRepository.forceStartState"
+        )
+    }
+
+    private fun logStateEvent(
+        type: TypeEvent,
+        source: SourceEvent,
+        origin: String,
+        note: String? = null
+    ) {
+        val sessionId = _currentSessionId.value
+        val workoutStateName = _workoutState.value
+        val isTrackingNow = _isTracking.value
+        val activityModeLabel = _activityMode.value.label
+        val paceTextNow = _currentPace.value
+        val trainingTimeNow = trainingTimeMs.value
+        val gpsAccuracyNow = _currentGPSAccuracy.value
+
+        scope.launch {
+            if (!sessionId.isNullOrBlank()) {
+                // Тренировка активна -> session log, payload = session
+                eventsLog.log(
+                    type = type,
+                    source = source,
+                    origin = origin,
+                    sessionId = sessionId,
+                    data = SessionEventData(
+                        workoutState = workoutStateName,
+                        isTracking = isTrackingNow,
+                        activityMode = activityModeLabel,
+                        paceText = paceTextNow,
+                        trainingTimeMs = trainingTimeNow,
+                        gpsAccuracyM = gpsAccuracyNow,
+                        note = note
+                    )
+                )
+            } else {
+                // Тренировки нет -> app log, payload = app
+                eventsLog.log(
+                    type = type,
+                    source = source,
+                    origin = origin,
+                    sessionId = null,
+                    data = AppEventData(
+                        workoutState = workoutStateName,
+                        note = note
+                    )
+                )
+            }
+        }
     }
 
     private fun sendStartCommand() {
@@ -123,6 +182,12 @@ class LocationRepository(
         _isTracking.value = false
         _currentGPSAccuracy.value = 0f
         paceTimer.stop()
+
+        logStateEvent(
+            type = TypeEvent.WORKOUT_STOPPED,
+            source = SourceEvent.SERVICE,
+            origin = "LocationRepository.forceStopState"
+        )
     }
 
     private fun sendStopCommand() {
@@ -163,6 +228,13 @@ class LocationRepository(
         _workoutState.value = WorkoutState.IDLE
         _currentSessionId.value = null
         Log.d("ID", _currentSessionId.value.toString())
+
+        logStateEvent(
+            type = TypeEvent.SERVICE_STOPPED,
+            source = SourceEvent.UI,
+            origin = "LocationRepository.saveTracking",
+            note = "Tracking saved and repository reset"
+        )
     }
 
 
@@ -190,6 +262,12 @@ class LocationRepository(
             Log.d(TAG, "Режим изменен на: ${_activityMode.value}")
 
         }
+        logStateEvent(
+            type = TypeEvent.MODE_CHANGED,
+            source = SourceEvent.UI,
+            origin = "LocationRepository.changeMode"
+        )
+
 
     }
 

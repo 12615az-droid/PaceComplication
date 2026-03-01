@@ -39,7 +39,7 @@ class MainApplication : Application() {
                 source = SourceEvent.SYSTEM,
                 origin = "MainApplication.onCreate",
                 data = AppEventData(
-                    tNs = System.nanoTime(), note = "Application created"
+                    note = "Application created"
                 )
             )
         }
