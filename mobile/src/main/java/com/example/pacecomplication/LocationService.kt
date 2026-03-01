@@ -9,12 +9,16 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
+import com.example.pacecomplication.logger.EventsLog
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.android.inject
 
 class LocationService : Service() {
@@ -24,6 +28,8 @@ class LocationService : Service() {
     private val locationRepository: LocationRepository by inject()
     private val notificationHelper: LocationNotificationHelper by inject()
     private val sensorTracker: SensorTracker by inject()
+    private val eventsLog: EventsLog by inject()
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     // Если Logger простой и нужен Context, можно оставить создание руками,
     // но лучше тоже через inject, если он в модуле. Пока оставим так:
@@ -50,11 +56,12 @@ class LocationService : Service() {
 
         when (action) {
             "START" -> {
+
                 // Синхронизируем состояние (на случай, если старт был из шторки, а не из UI)
                 // Это безопасно, так как мы убрали "return" в репозитории
                 locationRepository.forceStartState()
                 sensorTracker.startTracking()
-                
+
 
                 val notification = notificationHelper.getNotification("0:00", 0f)
 
@@ -73,6 +80,7 @@ class LocationService : Service() {
             }
 
             "STOP" -> {
+
                 locationRepository.forceStopState()
                 sensorTracker.stopTracking()
                 stopLocationUpdates()
@@ -83,6 +91,7 @@ class LocationService : Service() {
             }
 
             "KILL" -> {
+
                 // --- РЕЖИМ ВЫХОДА (Save) ---
                 // Вот теперь убиваем всё
                 stopLocationUpdates()
@@ -95,6 +104,7 @@ class LocationService : Service() {
         }
         return START_STICKY
     }
+
 
     private fun setupLocationLogic() {
         locationCallback = object : LocationCallback() {

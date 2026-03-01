@@ -6,10 +6,7 @@ import android.content.Intent
 import android.location.Location
 import android.util.Log
 import com.example.pacecomplication.history.SessionIdGenerator
-import com.example.pacecomplication.logger.AppEventData
 import com.example.pacecomplication.logger.EventsLog
-import com.example.pacecomplication.logger.SourceEvent
-import com.example.pacecomplication.logger.TypeEvent
 import com.example.pacecomplication.modes.RunningMode
 import com.example.pacecomplication.modes.TrainingMode
 import com.example.pacecomplication.modes.TrainingModes
@@ -22,7 +19,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 
 
 enum class WorkoutState {
@@ -83,6 +79,7 @@ class LocationRepository(
     // Внутри LocationRepository
 
     fun startTracking() {
+
         // 1. Сразу меняем UI, не ждем сервиса
         forceStartState()
 
@@ -114,6 +111,7 @@ class LocationRepository(
 // --- СТОП ---
 
     fun stopTracking() {
+
         // 1. Сразу гасим UI
         forceStopState()
 
@@ -137,6 +135,7 @@ class LocationRepository(
     }
 
     fun saveTracking() {
+
         // 1. УБИВАЕМ СЕРВИС (Первым делом!)
         // Шлем команду "STOP", чтобы он отписался от GPS и убрал уведомление.
         val intent = Intent(context, LocationService::class.java)
@@ -170,6 +169,7 @@ class LocationRepository(
     fun setTrainingGoalDialogOpen(isOpen: Boolean) {
         _isGoalSetupOpen.value = isOpen
 
+
     }
 
 
@@ -188,18 +188,9 @@ class LocationRepository(
             _activityMode.value = TrainingModes.next(_activityMode.value)
             paceCalculator.reset()
             Log.d(TAG, "Режим изменен на: ${_activityMode.value}")
+
         }
 
-        scope.launch {
-            eventsLog.log(
-                type = TypeEvent.APP_STARTED,
-                source = SourceEvent.SYSTEM,
-                origin = "App.onCreate",
-                data = AppEventData(
-                    tNs = System.nanoTime()
-                )
-            )
-        }
     }
 
 

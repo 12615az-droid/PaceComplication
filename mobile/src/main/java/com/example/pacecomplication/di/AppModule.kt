@@ -14,7 +14,7 @@ import org.koin.dsl.module
 
 val appModule = module {
     // 1. Объявляем Репозиторий как синглтон (один на всё приложение)
-    single { LocationRepository(context = get()) }
+    single { LocationRepository(context = get(), eventsLog = get()) }
     single { LocationNotificationHelper(androidContext()) }
     single { SensorTracker(androidContext()) }
     single { LogFilesManager(androidContext()) }      // папка/cleanup/пути файлов

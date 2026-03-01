@@ -1,5 +1,6 @@
 package com.example.pacecomplication.logger
 
+
 import com.example.pacecomplication.logger.LogJson.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -20,98 +21,64 @@ fun toJsonLine(entry: EventLogEntry): String =
 
 @Serializable
 enum class TypeEvent {
-    APP_STARTED,
-    SERVICE_STARTED,
-    SERVICE_STOPPED,
-    WORKOUT_STARTED,
-    WORKOUT_STOPPED,
-    MODE_CHANGED,
-    FILTER_SELECTED,
-    PERMISSION_RESULT,
-    GPS_SIGNAL_CHANGED,
-    ERROR,
+    APP_STARTED, SERVICE_STARTED, SERVICE_STOPPED, WORKOUT_STARTED, WORKOUT_STOPPED, MODE_CHANGED, FILTER_SELECTED, PERMISSION_RESULT, GPS_SIGNAL_CHANGED, ERROR,
 }
 
 @Serializable
 enum class SourceEvent {
-    UI,
-    NOTIFICATION,
-    SERVICE,
-    SYSTEM,
-    WEAR,
-    UNKNOWN,
+    UI, NOTIFICATION, SERVICE, SYSTEM, WEAR, UNKNOWN,
 }
 
+
 @Serializable
-sealed interface EventData {
-    val tNs: Long
-    val sessionId: String?
-}
+sealed interface EventPayload
+
 
 @Serializable
 @SerialName("app")
 data class AppEventData(
-    override val tNs: Long,
-    override val sessionId: String? = null,
-
     val screen: String? = null,
-    val workoutState: String? = null,   // <-- было WorkoutState?
-
+    val workoutState: String? = null,
     val permission: String? = null,
     val granted: Boolean? = null,
-
     val errorMessage: String? = null,
     val errorStack: String? = null,
-
     val note: String? = null
-) : EventData
+) : EventPayload
 
 @Serializable
 @SerialName("session")
 data class SessionEventData(
-    override val tNs: Long,
-    override val sessionId: String,
-
-    val workoutState: String,           // <-- было WorkoutState
+    val workoutState: String,
     val isTracking: Boolean,
-    val activityMode: String,           // <-- было TrainingMode
-
+    val activityMode: String,
     val paceText: String? = null,
     val trainingTimeMs: Long? = null,
     val gpsAccuracyM: Float? = null,
-
     val note: String? = null
-) : EventData
+) : EventPayload
 
 @Serializable
 data class EventLogEntry(
     val type: TypeEvent,
     val source: SourceEvent,
     val origin: String? = null,
-
-    // дублируем в “шапке” для удобства фильтрации без парсинга data
     val tNs: Long,
     val sessionId: String? = null,
-
-    val data: EventData? = null,
+    val data: EventPayload? = null
 )
 
 class EventsLog(
     private val storage: StateLogStorage
 ) {
-    /**
-     * Единая точка записи event log.
-     * sessionId берём из data (если есть) или можно передать отдельно при желании.
-     */
     suspend fun log(
         type: TypeEvent,
         source: SourceEvent,
         origin: String? = null,
-        data: EventData? = null
+        sessionId: String? = null,
+        data: EventPayload? = null,
+        tNs: Long = System.nanoTime()
     ) {
-        val tNs = data?.tNs ?: System.nanoTime()
-        val sessionId = data?.sessionId
-
         val entry = EventLogEntry(
             type = type,
             source = source,
