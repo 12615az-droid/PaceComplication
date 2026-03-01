@@ -1,4 +1,4 @@
-package com.example.pacecomplication.Logger
+package com.example.pacecomplication.logger
 
 import android.content.Context
 import java.io.File

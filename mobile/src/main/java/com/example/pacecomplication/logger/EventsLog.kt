@@ -1,6 +1,6 @@
-package com.example.pacecomplication.Logger
+package com.example.pacecomplication.logger
 
-import com.example.pacecomplication.Logger.LogJson.json
+import com.example.pacecomplication.logger.LogJson.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -96,11 +96,32 @@ data class EventLogEntry(
     val data: EventData? = null,
 )
 
-class EventsLog {
+class EventsLog(
+    private val storage: StateLogStorage
+) {
+    /**
+     * Единая точка записи event log.
+     * sessionId берём из data (если есть) или можно передать отдельно при желании.
+     */
+    suspend fun log(
+        type: TypeEvent,
+        source: SourceEvent,
+        origin: String? = null,
+        data: EventData? = null
+    ) {
+        val tNs = data?.tNs ?: System.nanoTime()
+        val sessionId = data?.sessionId
 
-    fun log(type: TypeEvent, source: SourceEvent, origin: String, data: EventData) {
+        val entry = EventLogEntry(
+            type = type,
+            source = source,
+            origin = origin,
+            tNs = tNs,
+            sessionId = sessionId,
+            data = data
+        )
 
+        val jsonLine = toJsonLine(entry)
+        storage.appendEvent(jsonLine, sessionId)
     }
-
-
 }

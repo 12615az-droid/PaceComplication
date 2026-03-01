@@ -5,6 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.location.Location
 import android.util.Log
+import com.example.pacecomplication.history.SessionIdGenerator
+import com.example.pacecomplication.logger.AppEventData
+import com.example.pacecomplication.logger.EventsLog
+import com.example.pacecomplication.logger.SourceEvent
+import com.example.pacecomplication.logger.TypeEvent
 import com.example.pacecomplication.modes.RunningMode
 import com.example.pacecomplication.modes.TrainingMode
 import com.example.pacecomplication.modes.TrainingModes
@@ -12,8 +17,12 @@ import com.example.pacecomplication.pace.PaceCalculator
 import com.example.pacecomplication.pace.PaceUpdate
 import com.example.pacecomplication.pace.WearPaceSender
 import com.example.pacecomplication.timer.PaceTimer
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 
 enum class WorkoutState {
@@ -30,11 +39,13 @@ class LocationRepository(
         stopThreshold = STOP_THRESHOLD, accBadThreshold = ACC_BAD_THRESHOLD
     ),
     private val wearPaceSender: WearPaceSender = WearPaceSender(),
-    private val context: Context
+    private val context: Context,
+    private val eventsLog: EventsLog
 ) {
 
     private val TAG = "PACE_DEBUG"
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     // Состояние репозитория (наблюдаемое UI через StateFlow):
     // - currentPace: строка темпа для экрана тренировки
@@ -59,6 +70,9 @@ class LocationRepository(
     private val _currentGPSAccuracy = MutableStateFlow(0f)
     val currentGPSAccuracy = _currentGPSAccuracy.asStateFlow()
 
+    private val _currentSessionId = MutableStateFlow<String?>(null)
+    val currentSessionId = _currentSessionId.asStateFlow()
+
 
     val trainingTimeMs = paceTimer.trainingTimeMs
 
@@ -78,6 +92,10 @@ class LocationRepository(
 
     fun forceStartState() {
         // Убираем проверку "if (ACTIVE) return", она мешает, если сервис перезапускается
+        if (_currentSessionId.value == null) {
+            _currentSessionId.value = SessionIdGenerator.newId()
+        }
+
         _isTracking.value = true
         _workoutState.value = WorkoutState.ACTIVE
         paceTimer.start()
@@ -90,11 +108,7 @@ class LocationRepository(
         val intent = Intent(context, LocationService::class.java)
         intent.action = "START"
 
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            context.startForegroundService(intent)
-        } else {
-            context.startService(intent)
-        }
+        context.startForegroundService(intent)
     }
 
 // --- СТОП ---
@@ -148,11 +162,14 @@ class LocationRepository(
         // 4. ПЕРЕКЛЮЧАЕМ РЕЖИМ (Финал)
         // Только теперь говорим UI: "Всё, покажи стартовый экран"
         _workoutState.value = WorkoutState.IDLE
+        _currentSessionId.value = null
+        Log.d("ID", _currentSessionId.value.toString())
     }
 
 
     fun setTrainingGoalDialogOpen(isOpen: Boolean) {
         _isGoalSetupOpen.value = isOpen
+
     }
 
 
@@ -171,6 +188,17 @@ class LocationRepository(
             _activityMode.value = TrainingModes.next(_activityMode.value)
             paceCalculator.reset()
             Log.d(TAG, "Режим изменен на: ${_activityMode.value}")
+        }
+
+        scope.launch {
+            eventsLog.log(
+                type = TypeEvent.APP_STARTED,
+                source = SourceEvent.SYSTEM,
+                origin = "App.onCreate",
+                data = AppEventData(
+                    tNs = System.nanoTime()
+                )
+            )
         }
     }
 

@@ -1,4 +1,4 @@
-package com.example.pacecomplication.Logger
+package com.example.pacecomplication.logger
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex

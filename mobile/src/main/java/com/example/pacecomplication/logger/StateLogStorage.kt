@@ -1,5 +1,4 @@
-import com.example.pacecomplication.Logger.JsonlFileWriter
-import com.example.pacecomplication.Logger.LogFilesManager
+package com.example.pacecomplication.logger
 
 class StateLogStorage(
     private val files: LogFilesManager,

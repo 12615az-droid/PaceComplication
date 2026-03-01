@@ -1,8 +1,8 @@
-package com.example.pacecomplication // проверь свой пакет!
+package com.example.pacecomplication
 
 import android.app.Application
-import com.example.pacecomplication.Logger.LogFilesManager
 import com.example.pacecomplication.di.appModule
+import com.example.pacecomplication.logger.LogFilesManager
 import org.koin.android.ext.android.getKoin
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger

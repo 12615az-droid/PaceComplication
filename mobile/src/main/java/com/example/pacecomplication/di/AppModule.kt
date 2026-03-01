@@ -3,7 +3,10 @@ package com.example.pacecomplication.di
 import SensorTracker
 import com.example.pacecomplication.LocationNotificationHelper
 import com.example.pacecomplication.LocationRepository
-import com.example.pacecomplication.Logger.LogFilesManager
+import com.example.pacecomplication.logger.EventsLog
+import com.example.pacecomplication.logger.JsonlFileWriter
+import com.example.pacecomplication.logger.LogFilesManager
+import com.example.pacecomplication.logger.StateLogStorage
 import com.example.pacecomplication.ui.TrainingViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -14,7 +17,10 @@ val appModule = module {
     single { LocationRepository(context = get()) }
     single { LocationNotificationHelper(androidContext()) }
     single { SensorTracker(androidContext()) }
-    single { LogFilesManager(androidContext()) }
+    single { LogFilesManager(androidContext()) }      // папка/cleanup/пути файлов
+    single { JsonlFileWriter() }                      // appendLine()
+    single { StateLogStorage(get(), get()) }          // files + writer
+    single { EventsLog(get()) }                       // storage
 
     // 2. Объявляем Вьюмодель
     // get() сам найдет LocationRepository, потому что мы его объявили строчкой выше
