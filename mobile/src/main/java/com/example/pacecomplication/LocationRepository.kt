@@ -112,6 +112,23 @@ class LocationRepository(
         )
     }
 
+
+    fun logScreenChanged(screenName: String, origin: String = "UI.Navigation") {
+        scope.launch {
+            eventsLog.log(
+                type = TypeEvent.SCREEN_CHANGED,
+                source = SourceEvent.UI,
+                origin = origin,
+                sessionId = null,
+                data = AppEventData(
+                    screen = screenName,
+                    workoutState = _workoutState.value,
+                    note = "Screen changed"
+                )
+            )
+        }
+    }
+
     private fun logStateEvent(
         type: TypeEvent,
         source: SourceEvent,

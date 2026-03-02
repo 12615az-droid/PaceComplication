@@ -1,19 +1,28 @@
 package com.example.pacecomplication.ui
 
+import android.Manifest
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-
 import androidx.compose.ui.graphics.vector.ImageVector
-
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -21,14 +30,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.pacecomplication.modes.TrainingMode
-import com.example.pacecomplication.modes.WalkingMode
 import com.example.pacecomplication.WorkoutState
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import org.koin.androidx.compose.koinViewModel
-import android.Manifest
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.compose.runtime.LaunchedEffect
 
 /**
  * Описание вкладок нижней навигации (Bottom Navigation).
@@ -118,8 +124,11 @@ fun PaceScreen(
 
 
 
-    if (workoutState == WorkoutState.IDLE) PaceAppShell()
-    else TrainingScreen()
+    if (workoutState == WorkoutState.IDLE) {
+        PaceAppShell()
+    } else {
+        TrainingScreen()
+    }
 }
 
 
@@ -171,7 +180,8 @@ fun PaceAppShell(
 
         // NavHost — точка переключения экранов приложения
         AppNavHost(
-            navController = navController, modifier = Modifier.padding(innerPadding)
+            navController = navController,
+            modifier = Modifier.padding(innerPadding),
         )
     }
 }
@@ -273,7 +283,17 @@ fun BottomBar(
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
+    viewModel: TrainingViewModel = koinViewModel()
 ) {
+    LaunchedEffect(navController) {
+        navController.currentBackStackEntryFlow
+            .map { it.destination.route }
+            .filterNotNull()
+            .distinctUntilChanged()
+            .collect { route ->
+                viewModel.logScreenChanged(route)
+            }
+    }
     // NavHost — контейнер, который отображает экран согласно текущему route
     NavHost(
         navController = navController,

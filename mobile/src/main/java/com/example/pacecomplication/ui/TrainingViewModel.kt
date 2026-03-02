@@ -36,4 +36,5 @@ class TrainingViewModel(
     fun onOpenGoalSetup() = openGoalSetupDialog()
 
     fun onCloseGoalSetup() = closeGoalSetupDialog()
+    fun logScreenChanged(screenName: String) = repository.logScreenChanged(screenName)
 }

@@ -3,6 +3,8 @@ package com.example.pacecomplication.logger
 
 import com.example.pacecomplication.WorkoutState
 import com.example.pacecomplication.logger.LogJson.json
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -22,7 +24,7 @@ fun toJsonLine(entry: EventLogEntry): String =
 
 @Serializable
 enum class TypeEvent {
-    APP_STARTED, SERVICE_STARTED, SERVICE_STOPPED, WORKOUT_STARTED, WORKOUT_STOPPED, MODE_CHANGED, FILTER_SELECTED, PERMISSION_RESULT, GPS_SIGNAL_CHANGED, ERROR,
+    APP_STARTED, SERVICE_STARTED, SERVICE_STOPPED, WORKOUT_STARTED, WORKOUT_STOPPED, MODE_CHANGED, FILTER_SELECTED, PERMISSION_RESULT, GPS_SIGNAL_CHANGED, ERROR, SCREEN_CHANGED,
 }
 
 @Serializable
@@ -72,6 +74,9 @@ data class EventLogEntry(
 class EventsLog(
     private val storage: StateLogStorage
 ) {
+    private val dedupMutex = Mutex()
+    private val dedupWindowNs = 1_500_000_000L
+    private val lastEventByKey = mutableMapOf<String, Long>()
     suspend fun log(
         type: TypeEvent,
         source: SourceEvent,
@@ -88,8 +93,28 @@ class EventsLog(
             sessionId = sessionId,
             data = data
         )
+        val dedupKey = buildDedupKey(entry)
+        val shouldSkip = dedupMutex.withLock {
+            val nowNs = entry.tNs
+            val lastNs = lastEventByKey[dedupKey]
+            val isDuplicate = lastNs != null && (nowNs - lastNs) in 0..dedupWindowNs
+
+            if (!isDuplicate) {
+                lastEventByKey[dedupKey] = nowNs
+            }
+
+            isDuplicate
+        }
+
+        if (shouldSkip) return
 
         val jsonLine = toJsonLine(entry)
         storage.appendEvent(jsonLine, sessionId)
+    }
+
+    private fun buildDedupKey(entry: EventLogEntry): String {
+        val dataJson =
+            entry.data?.let { json.encodeToString(EventPayload.serializer(), it) } ?: "null"
+        return "${entry.type}|${entry.source}|${entry.origin}|${entry.sessionId}|$dataJson"
     }
 }
