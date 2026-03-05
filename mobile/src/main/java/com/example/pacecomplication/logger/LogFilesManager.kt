@@ -15,12 +15,16 @@ class LogFilesManager(
     private val logsDir: File by lazy {
         File(context.filesDir, dirName).apply { mkdirs() }
     }
+    private val streamsDir: File by lazy {
+        File(logsDir, "streams").apply { mkdirs() }
+    }
 
     private val dateFmt: DateTimeFormatter =
         DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.of("UTC"))
 
     fun ensureDirs() {
         logsDir.mkdirs()
+        streamsDir.mkdirs()
     }
 
     /** app-YYYY-MM-DD.jsonl */
@@ -29,10 +33,19 @@ class LogFilesManager(
         return File(logsDir, "app-$day.jsonl")
     }
 
+    fun gpsLogFile(sessionId: String): File =
+        File(streamsDir, "gps-$sessionId.jsonl")
+
+    fun sensorLogFile(sessionId: String): File =
+        File(streamsDir, "sensors-$sessionId.jsonl")
+
+    fun derivedLogFile(sessionId: String): File =
+        File(streamsDir, "derived-$sessionId.jsonl")
+
     /** session-<sessionId>.jsonl (sessionId уже содержит время/uuid как решишь) */
-    fun sessionLogFile(sessionId: String): File {
-        return File(logsDir, "session-$sessionId.jsonl")
-    }
+    fun sessionLogFile(sessionId: String): File =
+        File(logsDir, "session-$sessionId.jsonl")
+
 
     fun cleanupOldLogs(nowMs: Long = System.currentTimeMillis()) {
 
