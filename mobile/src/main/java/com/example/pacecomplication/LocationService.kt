@@ -1,5 +1,6 @@
 package com.example.pacecomplication
 
+import GPSLog
 import SensorTracker
 import android.annotation.SuppressLint
 import android.app.NotificationManager
@@ -33,18 +34,15 @@ class LocationService : Service() {
     private val notificationHelper: LocationNotificationHelper by inject()
     private val sensorTracker: SensorTracker by inject()
     private val eventsLog: EventsLog by inject()
+    private val gpsLog: GPSLog by inject()
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    // Если Logger простой и нужен Context, можно оставить создание руками,
-    // но лучше тоже через inject, если он в модуле. Пока оставим так:
-    private lateinit var logger: TelemetryLogger
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
 
     override fun onCreate() {
         super.onCreate()
-        logger = TelemetryLogger(this)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         // Настраиваем логику callback (но пока не запускаем)
@@ -154,12 +152,25 @@ class LocationService : Service() {
     private fun setupLocationLogic() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
-                for (location in locationResult.locations) {
+                val locations = locationResult.locations
+                val batchSize = locations.size
+                locations.forEachIndexed { index, location ->
                     // Передаем данные в репозиторий
                     val paceUpdate = locationRepository.updatePace(location)
 
                     // Пишем логи
-                    logger.log("Pace: ${paceUpdate?.paceValue} | Acc: ${location.accuracy}")
+                    serviceScope.launch {
+                        gpsLog.logLocation(
+                            sessionId = locationRepository.currentSessionId.value,
+                            location = location,
+                            paceUpdate = paceUpdate,
+                            workoutState = locationRepository.workoutState.value,
+                            isTracking = locationRepository.isTracking.value,
+                            mode = locationRepository.activityMode.value,
+                            batchSize = batchSize,
+                            batchIndex = index
+                        )
+                    }
 
                     // Обновляем уведомление (то, что было в stopPaceService)
                     updateNotification(paceUpdate?.paceText, location.accuracy)

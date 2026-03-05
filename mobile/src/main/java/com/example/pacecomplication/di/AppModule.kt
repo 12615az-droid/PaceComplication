@@ -1,5 +1,6 @@
 package com.example.pacecomplication.di
 
+import GPSLog
 import SensorTracker
 import com.example.pacecomplication.LocationNotificationHelper
 import com.example.pacecomplication.LocationRepository
@@ -21,6 +22,7 @@ val appModule = module {
     single { JsonlFileWriter() }                      // appendLine()
     single { StateLogStorage(get(), get()) }          // files + writer
     single { EventsLog(get()) }                       // storage
+    single { GPSLog(get(), get()) }                    // gps stream logger
 
     // 2. Объявляем Вьюмодель
     // get() сам найдет LocationRepository, потому что мы его объявили строчкой выше
