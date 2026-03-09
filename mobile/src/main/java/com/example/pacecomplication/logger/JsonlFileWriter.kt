@@ -26,4 +26,22 @@ class JsonlFileWriter {
             }
         }
     }
+
+    suspend fun appendLines(file: File, lines: List<String>) = withContext(Dispatchers.IO) {
+        if (lines.isEmpty()) return@withContext
+
+        mutex.withLock {
+            file.parentFile?.mkdirs()
+
+            FileOutputStream(file, /* append = */ true).use { fos ->
+                OutputStreamWriter(fos, StandardCharsets.UTF_8).use { w ->
+                    lines.forEach { line ->
+                        w.write(line)
+                        w.write("\n")
+                    }
+                    w.flush()
+                }
+            }
+        }
+    }
 }

@@ -1,6 +1,7 @@
 package com.example.pacecomplication
 
 import GPSLog
+import SensorLog
 import SensorTracker
 import android.annotation.SuppressLint
 import android.app.NotificationManager
@@ -22,7 +23,9 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 
@@ -35,7 +38,9 @@ class LocationService : Service() {
     private val sensorTracker: SensorTracker by inject()
     private val eventsLog: EventsLog by inject()
     private val gpsLog: GPSLog by inject()
+    private val sensorLog: SensorLog by inject()
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private var sensorLogJob: Job? = null
 
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -60,6 +65,7 @@ class LocationService : Service() {
             "START" -> {
                 locationRepository.forceStartState()
                 sensorTracker.startTracking()
+                startSensorLogging()
 
                 val notification = notificationHelper.getNotification("0:00", 0f)
 
@@ -86,6 +92,7 @@ class LocationService : Service() {
                 locationRepository.forceStopState()
                 sensorTracker.stopTracking()
                 stopLocationUpdates()
+                stopSensorLogging()
 
                 val pausedNotification = notificationHelper.getNotification("Пауза", 0f)
                 val manager = getSystemService(NotificationManager::class.java)
@@ -101,8 +108,10 @@ class LocationService : Service() {
             "KILL" -> {
                 stopLocationUpdates()
                 sensorTracker.stopTracking()
+                stopSensorLogging()
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
+
                 notificationHelper.cancelNotification()
 
                 logServiceEvent(
@@ -129,6 +138,29 @@ class LocationService : Service() {
         }
         return START_STICKY
     }
+
+    private fun startSensorLogging() {
+        sensorLogJob?.cancel()
+        sensorLogJob = serviceScope.launch {
+            sensorTracker.sensorDataFlow.collect { sample ->
+                sensorLog.logSample(
+                    sessionId = locationRepository.currentSessionId.value,
+                    sensorData = sample
+                )
+            }
+        }
+    }
+
+    private fun stopSensorLogging() {
+        val job = sensorLogJob ?: return
+        sensorLogJob = null
+
+        serviceScope.launch {
+            job.cancelAndJoin()
+            sensorLog.flush()
+        }
+    }
+
 
     private fun logServiceEvent(
         type: TypeEvent,
@@ -207,6 +239,7 @@ class LocationService : Service() {
         super.onDestroy()
         // ФИНАЛЬНАЯ ЗАЧИСТКА
         stopLocationUpdates()
+        stopSensorLogging()
         notificationHelper.cancelNotification() // Убираем уведомление совсем
         notificationHelper.destroyMediaSession()
     }
