@@ -16,7 +16,6 @@ import com.example.pacecomplication.modes.TrainingMode
 import com.example.pacecomplication.modes.TrainingModes
 import com.example.pacecomplication.pace.PaceCalculator
 import com.example.pacecomplication.pace.PaceUpdate
-import com.example.pacecomplication.pace.WearPaceSender
 import com.example.pacecomplication.timer.PaceTimer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,8 +26,19 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 @Serializable
-enum class WorkoutState {
-    IDLE, ACTIVE
+enum class WorkoutState(val intState: Int) {
+    IDLE(0),
+    ACTIVE(1),
+    PAUSED(2),
+    FINISHED(3);
+
+    companion object {
+        // Преобразование из Int обратно в WorkoutState
+        fun fromIntState(value: Int): WorkoutState {
+            // В Kotlin 1.9+ используйте entries вместо values()
+            return entries.find { it.intState == value } ?: IDLE
+        }
+    }
 }
 
 private const val STOP_THRESHOLD = 0.5f
@@ -40,7 +50,7 @@ class LocationRepository(
     private val paceCalculator: PaceCalculator = PaceCalculator(
         stopThreshold = STOP_THRESHOLD, accBadThreshold = ACC_BAD_THRESHOLD
     ),
-    private val wearPaceSender: WearPaceSender = WearPaceSender(),
+    private val wearDataSender: WearDataSender,
     private val context: Context,
     private val eventsLog: EventsLog
 ) {
@@ -79,10 +89,13 @@ class LocationRepository(
     val trainingTimeMs = paceTimer.trainingTimeMs
 
 
-    // --- УПРАВЛЕНИЕ ---
-
-
-    // Внутри LocationRepository
+    private fun syncWithWear() {
+        wearDataSender.sendWorkoutUpdate(
+            _currentPace.value,
+            _isTracking.value,
+            _workoutState.value.intState
+        )
+    }
 
     fun startTracking() {
 
@@ -105,6 +118,7 @@ class LocationRepository(
         if (_workoutState.value == WorkoutState.IDLE) {
             paceCalculator.reset()
         }
+        syncWithWear()
         logStateEvent(
             type = TypeEvent.WORKOUT_STARTED,
             source = SourceEvent.SERVICE,
@@ -200,6 +214,8 @@ class LocationRepository(
         _currentGPSAccuracy.value = 0f
         paceTimer.stop()
 
+        syncWithWear()
+
         logStateEvent(
             type = TypeEvent.WORKOUT_STOPPED,
             source = SourceEvent.SERVICE,
@@ -245,6 +261,7 @@ class LocationRepository(
         _workoutState.value = WorkoutState.IDLE
         _currentSessionId.value = null
         Log.d("ID", _currentSessionId.value.toString())
+        syncWithWear()
 
         logStateEvent(
             type = TypeEvent.SERVICE_STOPPED,
@@ -315,7 +332,11 @@ class LocationRepository(
             alphaProvider = _activityMode.value::alphaForAccuracy
         ) ?: return null
         _currentPace.value = paceUpdate.paceText
-        wearPaceSender.sendPace(paceUpdate.paceText)
+        wearDataSender.sendWorkoutUpdate(
+            paceUpdate.paceText,
+            isTracking = _isTracking.value,
+            workoutState.value.intState
+        )
 
         Log.d(TAG, "SPD: ${"%.2f".format(location.speed)} | PACE: ${paceUpdate.paceText}")
 

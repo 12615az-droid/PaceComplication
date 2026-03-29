@@ -1,4 +1,4 @@
-package com.example.pacecomplication.presentation.theme
+package com.example.pacecomplication.presentation.ui.theme
 
 import androidx.compose.runtime.Composable
 import androidx.wear.compose.material.MaterialTheme

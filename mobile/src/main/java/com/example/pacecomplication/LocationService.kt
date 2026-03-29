@@ -229,7 +229,7 @@ class LocationService : Service() {
     }
 
     private fun stopLocationUpdates() {
-        // Важно: отписываемся от GPS, чтобы не жрать батарею
+
         if (::locationCallback.isInitialized) {
             fusedLocationClient.removeLocationUpdates(locationCallback)
         }

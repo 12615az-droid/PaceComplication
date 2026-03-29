@@ -35,8 +35,7 @@ class MainActivity : ComponentActivity() {
 
             RunningAppTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    // Передаём в UI только события управления.
-                    // Сама Activity решает: запросить разрешения, запустить/остановить сервис и т.д
+
                     PaceScreen()
 
 

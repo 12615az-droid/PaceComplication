@@ -2,62 +2,37 @@ package com.example.pacecomplication.ui
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import com.example.pacecomplication.R
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.ShowChart
-import androidx.compose.material.icons.filled.BatteryChargingFull
-import androidx.compose.material.icons.filled.BluetoothConnected
-import androidx.compose.material.icons.filled.Contrast
-import androidx.compose.material.icons.filled.DirectionsRun
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.filled.PauseCircleFilled
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.ShowChart
-import androidx.compose.material.icons.filled.StayCurrentPortrait
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.Straighten
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pacecomplication.R
 
 /**
  * SettingsScreen — экран настроек приложения.
@@ -74,19 +49,21 @@ import androidx.compose.ui.unit.sp
  * - используется собственный компактный заголовок вместо стандартного TopAppBar
  * - экран адаптирован под динамическую тему Material 3
  */
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameяter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen() {
     val backgroundColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-    Scaffold (containerColor = backgroundColor,
+    Scaffold(
+        containerColor = backgroundColor,
         contentWindowInsets = WindowInsets(0),
-        topBar ={ CompactHeader(
-            stringResource(R.string.settingHeader)
-        )}
+        topBar = {
+            CompactHeader(
+                stringResource(R.string.settingHeader)
+            )
+        }
     )
-    {
-             padding ->
+    { padding ->
         // Временный список элементов.
 // Используется только для проверки:
 // - поведения скролла
@@ -94,155 +71,18 @@ fun SettingsScreen() {
 // - визуального восприятия экрана при большом количестве настроек
 //
 // Содержимое будет заменено на реальные настройки.
-        LazyColumn (modifier = Modifier.padding(padding).padding(horizontal = 20.dp),){
+        LazyColumn(
+            modifier = Modifier
+                .padding(padding)
+                .padding(horizontal = 20.dp)
+        ) {
 
-            item { SectionHeader("Алгоритмы тренировки") }
-            item {
-                SettingsRow(
-                    title = "Метод расчёта темпа",
-                    subtitle = "Скользящее окно (30 сек)",
-                    icon = Icons.Default.ShowChart,
-                    isNavigation = false
-                ) { /* Выбор метода */ }
-            }
-            item {
-                SettingsRow(
-                    title = "Фильтрация GPS",
-                    subtitle = "Фильтр Калмана (высокая точность)",
-                    icon = Icons.Default.MyLocation,
-                    isNavigation = false
-                ) { /* Настройка фильтра */ }
-            }
-            item {
-                SettingsRow(
-                    title = "Тип активности",
-                    subtitle = "Бег по пересеченной местности",
-                    icon = Icons.Default.DirectionsRun,
-                    isNavigation = false
-                ) { /* Диалог */ }
-            }
-
-            item { Spacer(modifier = Modifier.height(12.dp)) }
-
-            // --- СЕКЦИЯ 2: ОБОРУДОВАНИЕ ---
-            item { SectionHeader("Датчики и железо") }
-            item {
-                SettingsRow(
-                    title = "Внешний пульсометр",
-                    subtitle = "Polar H10 (Подключено)",
-                    icon = Icons.Default.BluetoothConnected,
-                    isNavigation = true
-                ) { /* Настройки BT */ }
-            }
-            item {
-                SettingsRow(
-                    title = "Калибровка шагомера",
-                    subtitle = "Коэффициент 1.042",
-                    icon = Icons.Default.Straighten,
-                    isNavigation = false
-                ) { /* Диалог ввода цифр */ }
-            }
-            item {
-                SettingsRow(
-                    title = "Частота опроса GPS",
-                    subtitle = "1 Гц (Энергосбережение)",
-                    icon = Icons.Default.BatteryChargingFull,
-                    isNavigation = false
-                ) { /* Выбор частоты */ }
-            }
-
-            item { Spacer(modifier = Modifier.height(12.dp)) }
-
-            // --- СЕКЦИЯ 3: АВТОМАТИЗАЦИЯ ---
-            item { SectionHeader("Автоматизация") }
-            item {
-                SettingsRow(
-                    title = "Автопауза",
-                    subtitle = "При скорости ниже 2 км/ч",
-                    icon = Icons.Default.PauseCircleFilled,
-                    isNavigation = false
-                ) { /* Настройка порога */ }
-            }
-            item {
-                SettingsRow(
-                    title = "Автоотсечка круга",
-                    subtitle = "Каждые 1000 метров",
-                    icon = Icons.Default.History,
-                    isNavigation = false
-                ) { /* Настройка круга */ }
-            }
-            item {
-                SettingsRow(
-                    title = "Таймер обратного отсчета",
-                    subtitle = "10 секунд перед стартом",
-                    icon = Icons.Default.Timer,
-                    isNavigation = false
-                ) { /* Настройка таймера */ }
-            }
-
-            item { Spacer(modifier = Modifier.height(12.dp)) }
-
-            // --- СЕКЦИЯ 4: ИНТЕРФЕЙС И ЭКРАН ---
-            item { SectionHeader("Отображение") }
-            item {
-                SettingsRow(
-                    title = "Сетка данных на экране",
-                    subtitle = "3 поля (Темп, Дистанция, Пульс)",
-                    icon = Icons.Default.GridView,
-                    isNavigation = true
-                ) { /* Конструктор экрана */ }
-            }
-            item {
-                SettingsRow(
-                    title = "Always on Display",
-                    subtitle = "Не гасить экран во время бега",
-                    icon = Icons.Default.StayCurrentPortrait,
-                    isNavigation = false
-                ) { /* Переключатель в диалоге */ }
-            }
-            item {
-                SettingsRow(
-                    title = "Цветовая схема",
-                    subtitle = "Высококонтрастная (Ночь)",
-                    icon = Icons.Default.Contrast,
-                    isNavigation = false
-                ) { /* Выбор темы */ }
-            }
-
-            item { Spacer(modifier = Modifier.height(12.dp)) }
-
-            // --- СЕКЦИЯ 5: СИСТЕМА И ХРАНИЛИЩЕ ---
-            item { SectionHeader("Данные") }
-            item {
-                SettingsRow(
-                    title = "Экспорт в GPX",
-                    subtitle = "Автоматически после финиша",
-                    icon = Icons.Default.Share,
-                    isNavigation = false
-                ) { /* Настройки экспорта */ }
-            }
-            item {
-                SettingsRow(
-                    title = "Локальное хранилище",
-                    subtitle = "Занято 128 МБ из 2 ГБ",
-                    icon = Icons.Default.Storage,
-                    isNavigation = true
-                ) { /* Очистка кеша */ }
-            }
-            item {
-                SettingsRow(
-                    title = "Версия прошивки алгоритма",
-                    subtitle = "v2.4.1-build-89",
-                    icon = Icons.Default.Info,
-                    isNavigation = true
-                ) { /* О приложении */ }
-            }
-        }
 
         }
+
+    }
 
 }
-
 
 
 /**
@@ -277,9 +117,6 @@ fun CompactHeader(title: String) {
 }
 
 
-
-
-
 /**
  * SectionHeader — заголовок раздела в экране настроек.
  *
@@ -308,8 +145,6 @@ fun SectionHeader(title: String) {
         letterSpacing = 1.sp
     )
 }
-
-
 
 
 /**

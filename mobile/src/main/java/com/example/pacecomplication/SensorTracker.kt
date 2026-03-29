@@ -47,6 +47,6 @@ class SensorTracker(context: Context) : SensorEventListener {
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // Для гироскопа и акселерометра обычно не нужно
+
     }
 }
