@@ -59,9 +59,7 @@ class LocationService : Service() {
      * Сюда приходят команды из LocationRepository: "START" или "STOP"
      */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val action = intent?.action
-
-        when (action) {
+        when (val action = intent?.action) {
             "START" -> {
                 locationRepository.forceStartState()
                 sensorTracker.startTracking()

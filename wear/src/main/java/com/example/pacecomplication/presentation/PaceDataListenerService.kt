@@ -23,7 +23,7 @@ class PaceDataListenerService : WearableListenerService() {
                 Log.d("WearData", newIsTracking.toString())
                 Log.d("WearData", newWorkoutState.toString())
                 // 3. Обновляем репозиторий на часах
-                PaceRepository.updateData(newPace, newIsTracking, newWorkoutState)
+                PaceRepository.updateData(this, newPace, newIsTracking, newWorkoutState)
 
 
             }

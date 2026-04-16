@@ -26,7 +26,7 @@ import com.example.pacecomplication.presentation.PaceRepository
 import com.example.pacecomplication.presentation.ui.theme.PaceComplicationTheme
 
 @Composable
-fun WearApp(onStopClick: () -> Unit = {}) {
+fun TrainingScreen(onStopClick: () -> Unit = {}) {
 
     val pace by PaceRepository.currentPace.collectAsState()
     PaceComplicationTheme {
@@ -71,5 +71,5 @@ fun Greeting(pace: String) {
 @Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
 @Composable
 fun DefaultPreview() {
-    WearApp()
+    TrainingScreen()
 }

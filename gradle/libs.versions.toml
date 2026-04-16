@@ -1,5 +1,5 @@
 [versions]
-agp = "8.9.1"
+agp = "8.13.2"
 kotlin = "2.0.21"
 coreKtx = "1.16.0"
 junit = "4.13.2"
@@ -26,6 +26,7 @@ lifecycleRuntimeCompose = "2.10.0"
 androidxMedia = "1.7.1"
 koin = "3.5.3"
 kotlinx-serialization = "1.6.3"
+wearOngoing = "1.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -64,6 +65,7 @@ androidx-compose-material-icons-extended = { group = "androidx.compose.material"
 androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "composeIcons" }
 androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycleRuntimeCompose" }
 androidx-media = { group = "androidx.media", name = "media", version.ref = "androidxMedia" }
+androidx-wear-ongoing = { group = "androidx.wear", name = "wear-ongoing", version.ref = "wearOngoing" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
