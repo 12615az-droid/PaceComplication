@@ -16,8 +16,6 @@ class TrainingViewModel(
     val isGoalSetupOpen = repository.isGoalSetupOpen
 
 
-    val isTracking = repository.isTracking
-
     fun startTracking() = repository.startTracking()
 
     fun stopTracking() = repository.stopTracking()

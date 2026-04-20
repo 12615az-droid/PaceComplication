@@ -24,7 +24,6 @@ private data class ProcessedGpsData(
     val paceText: String? = null,
     val paceSecPerKm: Double? = null,
     val workoutState: WorkoutState,
-    val isTracking: Boolean,
     val mode: String,
 )
 
@@ -49,7 +48,6 @@ class GPSLog(
         location: Location,
         paceUpdate: PaceUpdate?,
         workoutState: WorkoutState,
-        isTracking: Boolean,
         mode: TrainingMode,
         batchSize: Int,
         batchIndex: Int,
@@ -65,7 +63,6 @@ class GPSLog(
                 paceText = paceUpdate?.paceText,
                 paceSecPerKm = paceUpdate?.paceValue,
                 workoutState = workoutState,
-                isTracking = isTracking,
                 mode = mode.label
             )
         )

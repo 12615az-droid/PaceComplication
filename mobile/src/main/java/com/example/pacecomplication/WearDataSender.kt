@@ -12,13 +12,11 @@ class WearDataSender(context: Context) {
 
     private val dataClient: DataClient = Wearable.getDataClient(context.applicationContext)
 
-    fun sendWorkoutUpdate(paceString: String, isTracking: Boolean, workoutState: Int) {
+    fun sendWorkoutUpdate(paceString: String, workoutState: Int) {
         val putDataReq = PutDataMapRequest.create("/workout_sync").apply {
             // Твой темп
             dataMap.putString("pace_key", paceString)
-
-            // Управление Старт/Стоп
-            dataMap.putBoolean("is_tracking", isTracking)
+            
 
             // Состояние тренировки
             dataMap.putInt("workout_state", workoutState)

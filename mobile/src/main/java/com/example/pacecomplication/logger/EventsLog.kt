@@ -53,7 +53,6 @@ data class AppEventData(
 @SerialName("session")
 data class SessionEventData(
     val workoutState: WorkoutState,
-    val isTracking: Boolean,
     val activityMode: String,
     val paceText: String? = null,
     val trainingTimeMs: Long? = null,

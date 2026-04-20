@@ -90,7 +90,6 @@ fun TrainingScreen(
     val accuracy by viewModel.currentGPSAccuracy.collectAsState(initial = 0f)
     val timeMs by viewModel.trainingTimeMs.collectAsState(initial = 0L)
     val workoutState by viewModel.workoutState.collectAsState()
-    val isTracking by viewModel.isTracking.collectAsState()
     val status = getSignalStatus(accuracy)
     val workTime = WorkoutTimer()
     Surface(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
@@ -120,7 +119,7 @@ fun TrainingScreen(
 
             // Кнопки управления трекингом
             ControlButtons(
-                isTracking = isTracking,
+                workoutState = workoutState,
                 onStartClick = { viewModel.startTracking() },
                 onStopClick = { viewModel.stopTracking() },
                 onSaveClick = { viewModel.saveTracking() },
@@ -259,7 +258,7 @@ fun WorkoutStatsBlock(
  */
 @Composable
 fun ControlButtons(
-    isTracking: Boolean,
+    workoutState: WorkoutState,
     onStartClick: () -> Unit,
     onStopClick: () -> Unit,
     onSaveClick: () -> Unit,
@@ -272,7 +271,7 @@ fun ControlButtons(
     ) {
         Button(
             onClick = onStartClick,
-            enabled = !isTracking,
+            enabled = workoutState != WorkoutState.ACTIVE,
             modifier = Modifier
                 .width(IntrinsicSize.Min)
                 .weight(1f)
@@ -284,7 +283,7 @@ fun ControlButtons(
 
         Button(
             onClick = onStopClick,
-            enabled = isTracking,
+            enabled = workoutState == WorkoutState.ACTIVE,
             modifier = Modifier
                 .width(IntrinsicSize.Min)
                 .weight(1f)

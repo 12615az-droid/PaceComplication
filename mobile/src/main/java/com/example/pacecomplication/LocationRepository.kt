@@ -73,8 +73,6 @@ class LocationRepository(
     private val _activityMode = MutableStateFlow<TrainingMode>(RunningMode)
     val activityMode = _activityMode.asStateFlow()
 
-    private val _isTracking = MutableStateFlow(false)
-    val isTracking = _isTracking.asStateFlow()
 
     private val _workoutState = MutableStateFlow(WorkoutState.IDLE)
     val workoutState = _workoutState.asStateFlow()
@@ -89,13 +87,14 @@ class LocationRepository(
     val trainingTimeMs = paceTimer.trainingTimeMs
 
 
-    private fun syncWithWear() {
+    fun syncWithWear() {
         wearDataSender.sendWorkoutUpdate(
             _currentPace.value,
-            _isTracking.value,
             _workoutState.value.intState
         )
     }
+
+    private fun isWorkoutActive(): Boolean = _workoutState.value == WorkoutState.ACTIVE
 
     fun startTracking() {
 
@@ -111,11 +110,11 @@ class LocationRepository(
         if (_currentSessionId.value == null) {
             _currentSessionId.value = SessionIdGenerator.newId()
         }
+        val oldWorkoutState = _workoutState.value
 
-        _isTracking.value = true
         _workoutState.value = WorkoutState.ACTIVE
         paceTimer.start()
-        if (_workoutState.value == WorkoutState.IDLE) {
+        if (oldWorkoutState == WorkoutState.IDLE) {
             paceCalculator.reset()
         }
         syncWithWear()
@@ -151,7 +150,6 @@ class LocationRepository(
     ) {
         val sessionId = _currentSessionId.value
         val workoutStateName = _workoutState.value
-        val isTrackingNow = _isTracking.value
         val activityModeLabel = _activityMode.value.label
         val paceTextNow = _currentPace.value
         val trainingTimeNow = trainingTimeMs.value
@@ -167,7 +165,6 @@ class LocationRepository(
                     sessionId = sessionId,
                     data = SessionEventData(
                         workoutState = workoutStateName,
-                        isTracking = isTrackingNow,
                         activityMode = activityModeLabel,
                         paceText = paceTextNow,
                         trainingTimeMs = trainingTimeNow,
@@ -210,7 +207,7 @@ class LocationRepository(
     }
 
     fun forceStopState() {
-        _isTracking.value = false
+        _workoutState.value = WorkoutState.PAUSED
         _currentGPSAccuracy.value = 0f
         paceTimer.stop()
 
@@ -244,7 +241,6 @@ class LocationRepository(
         // 2. ОСТАНАВЛИВАЕМ (но не стираем) таймер
         // Чтобы данные не менялись, пока мы "сохраняем"
         paceTimer.stop()
-        _isTracking.value = false
 
         // --- (Здесь будет код сохранения в БД, когда ты его напишешь) ---
         // val finalDistance = paceCalculator.totalDistance
@@ -252,16 +248,13 @@ class LocationRepository(
 
         // 3. ЗАЧИСТКА (Сброс в ноль)
         // Делаем это ПОСЛЕ того, как всё остановили
-        paceCalculator.reset()
-        paceTimer.reset()
-        _currentGPSAccuracy.value = 0f
+
 
         // 4. ПЕРЕКЛЮЧАЕМ РЕЖИМ (Финал)
         // Только теперь говорим UI: "Всё, покажи стартовый экран"
-        _workoutState.value = WorkoutState.IDLE
-        _currentSessionId.value = null
-        Log.d("ID", _currentSessionId.value.toString())
-        syncWithWear()
+        destroySave()
+
+
 
         logStateEvent(
             type = TypeEvent.SERVICE_STOPPED,
@@ -269,6 +262,16 @@ class LocationRepository(
             origin = "LocationRepository.saveTracking",
             note = "Tracking saved and repository reset"
         )
+    }
+
+    fun destroySave() {
+        paceCalculator.reset()
+        paceTimer.reset()
+        _currentGPSAccuracy.value = 0f
+        _workoutState.value = WorkoutState.IDLE
+        _currentSessionId.value = null
+        Log.d("ID", _currentSessionId.value.toString())
+        syncWithWear()
     }
 
 
@@ -321,7 +324,7 @@ class LocationRepository(
     fun updatePace(location: Location): PaceUpdate? {
 
         // Игнорируем точки, если запись не активна
-        if (!_isTracking.value) return null
+        if (!isWorkoutActive()) return null
 
         _currentGPSAccuracy.value = location.accuracy
 
@@ -334,7 +337,6 @@ class LocationRepository(
         _currentPace.value = paceUpdate.paceText
         wearDataSender.sendWorkoutUpdate(
             paceUpdate.paceText,
-            isTracking = _isTracking.value,
             workoutState.value.intState
         )
 

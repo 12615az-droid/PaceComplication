@@ -11,29 +11,23 @@ object PaceRepository {
     private val _currentPace = MutableStateFlow("0:00")
     val currentPace: StateFlow<String> = _currentPace
 
-    private val _isTracking = MutableStateFlow(false)
-    val isTracking = _isTracking.asStateFlow()
 
     private val _workoutState = MutableStateFlow(0)
     val workoutState = _workoutState.asStateFlow()
 
-    fun updateData(context: Context, newPace: String, newIsTracking: Boolean, newWorkoutState: Int) {
-        val oldIsTracking = _isTracking.value
+    fun updateData(context: Context, newPace: String, newWorkoutState: Int) {
         val oldWorkoutState = _workoutState.value
 
         _currentPace.value = newPace
-        _isTracking.value = newIsTracking
         _workoutState.value = newWorkoutState
 
-        Log.d("WearData", "Pace: $newPace, Tracking: $newIsTracking, State: $newWorkoutState")
+        Log.d("WearData", "Pace: $newPace, State: $newWorkoutState")
 
         // Логика управления сервисом на основе двух параметров
-        if (oldWorkoutState != newWorkoutState || oldIsTracking != newIsTracking) {
+        if (oldWorkoutState != newWorkoutState) {
             val action = when {
                 // Если состояние "Активно" (1), смотрим на флаг трекинга
-                newWorkoutState == 1 -> {
-                    if (newIsTracking) "START" else "STOP"
-                }
+                newWorkoutState == 1 -> "START"
                 // Если состояние "IDLE/KILL" (0) или "FINISHED" (3)
                 newWorkoutState == 0 || newWorkoutState == 3 -> "KILL"
                 // Если пришла явная команда паузы (2)

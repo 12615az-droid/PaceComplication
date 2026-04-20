@@ -11,6 +11,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import com.example.pacecomplication.logger.AppEventData
 import com.example.pacecomplication.logger.EventsLog
 import com.example.pacecomplication.logger.SourceEvent
@@ -49,6 +50,7 @@ class LocationService : Service() {
     override fun onCreate() {
         super.onCreate()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        notificationHelper.createNotificationChannel()
 
         // Настраиваем логику callback (но пока не запускаем)
         setupLocationLogic()
@@ -111,7 +113,7 @@ class LocationService : Service() {
                 stopSelf()
 
                 notificationHelper.cancelNotification()
-
+                Log.e("Destroy", "kill onDestroy ")
                 logServiceEvent(
                     type = TypeEvent.SERVICE_STOPPED,
                     origin = "LocationService.onStartCommand.KILL",
@@ -142,8 +144,7 @@ class LocationService : Service() {
         sensorLogJob = serviceScope.launch {
             sensorTracker.sensorDataFlow.collect { sample ->
                 sensorLog.logSample(
-                    sessionId = locationRepository.currentSessionId.value,
-                    sensorData = sample
+                    sessionId = locationRepository.currentSessionId.value, sensorData = sample
                 )
             }
         }
@@ -161,9 +162,7 @@ class LocationService : Service() {
 
 
     private fun logServiceEvent(
-        type: TypeEvent,
-        origin: String,
-        note: String
+        type: TypeEvent, origin: String, note: String
     ) {
         serviceScope.launch {
             eventsLog.log(
@@ -172,8 +171,7 @@ class LocationService : Service() {
                 origin = origin,
                 sessionId = null, // <- сервисные события всегда app-log
                 data = AppEventData(
-                    workoutState = locationRepository.workoutState.value,
-                    note = note
+                    workoutState = locationRepository.workoutState.value, note = note
                 )
             )
         }
@@ -195,7 +193,6 @@ class LocationService : Service() {
                             location = location,
                             paceUpdate = paceUpdate,
                             workoutState = locationRepository.workoutState.value,
-                            isTracking = locationRepository.isTracking.value,
                             mode = locationRepository.activityMode.value,
                             batchSize = batchSize,
                             batchIndex = index
@@ -235,11 +232,15 @@ class LocationService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        // ФИНАЛЬНАЯ ЗАЧИСТКА
+        Log.e("Destroy", "fun onDestroy ")
         stopLocationUpdates()
         stopSensorLogging()
         notificationHelper.cancelNotification() // Убираем уведомление совсем
         notificationHelper.destroyMediaSession()
+        locationRepository.destroySave()
+        locationRepository.syncWithWear()
+
+
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
