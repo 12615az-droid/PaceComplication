@@ -1,4 +1,4 @@
-package com.example.pacecomplication.ui
+package com.example.pacecomplication.ui.mainScreens
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.isSystemInDarkTheme

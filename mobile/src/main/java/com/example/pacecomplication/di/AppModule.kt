@@ -22,18 +22,19 @@ val appModule = module {
     single { PaceTimer() }
     single { PaceCalculator(stopThreshold = 0.5f, accBadThreshold = 35f) }
     single { WearDataSender(androidContext()) }
-    
+
+
     // 1. Объявляем Репозиторий как синглтон (один на всё приложение)
-    single { 
+    single {
         LocationRepository(
             paceTimer = get(),
             paceCalculator = get(),
             wearDataSender = get(),
             context = get(),
             eventsLog = get()
-        ) 
+        )
     }
-    
+
     single { LocationNotificationHelper(androidContext()) }
     single { SensorTracker(androidContext()) }
     single { LogFilesManager(androidContext()) }      // папка/cleanup/пути файлов

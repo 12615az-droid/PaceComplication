@@ -31,6 +31,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.pacecomplication.WorkoutState
+import com.example.pacecomplication.ui.mainScreens.SettingsScreen
+import com.example.pacecomplication.ui.mainScreens.TrainingScreen
+import com.example.pacecomplication.ui.mainScreens.TrainingSetupScreen
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map

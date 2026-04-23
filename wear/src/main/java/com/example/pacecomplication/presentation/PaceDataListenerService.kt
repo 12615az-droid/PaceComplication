@@ -1,9 +1,11 @@
 package com.example.pacecomplication.presentation
 
+import android.content.Intent
 import android.util.Log
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
+import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.WearableListenerService
 
 class PaceDataListenerService : WearableListenerService() {
@@ -26,5 +28,16 @@ class PaceDataListenerService : WearableListenerService() {
 
             }
         }
+    }
+
+    override fun onPeerDisconnected(node: Node) {
+        super.onPeerDisconnected(node)
+        Log.d("WearData", "Связь с телефоном потеряна: ${node.displayName}")
+
+        // Если телефон "отвалился", принудительно гасим сервис тренировки
+        val intent = Intent(this, TrainingWearService::class.java).apply {
+            action = "KILL"
+        }
+        startService(intent)
     }
 }

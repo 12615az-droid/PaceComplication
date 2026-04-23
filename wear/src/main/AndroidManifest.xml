@@ -54,6 +54,7 @@
                         android:host="*"
                         android:pathPrefix="/workout_sync"
                         android:scheme="wear" />
+                <action android:name="com.google.android.gms.wearable.NODE_CHANGED" />
             </intent-filter>
         </service>
         <service

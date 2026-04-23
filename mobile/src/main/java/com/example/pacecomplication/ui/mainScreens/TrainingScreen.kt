@@ -1,4 +1,4 @@
-package com.example.pacecomplication.ui
+package com.example.pacecomplication.ui.mainScreens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import com.example.pacecomplication.R
 import com.example.pacecomplication.WorkoutState
 import com.example.pacecomplication.timer.WorkoutTimer
+import com.example.pacecomplication.ui.TrainingViewModel
 import org.koin.androidx.compose.koinViewModel
 
 
