@@ -1,4 +1,4 @@
-package com.example.pacecomplication.service
+package com.example.pacecomplication.serviceLocation
 
 import android.location.Location
 

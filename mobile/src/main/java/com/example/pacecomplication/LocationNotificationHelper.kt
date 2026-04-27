@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.support.v4.media.session.MediaSessionCompat
 import androidx.core.app.NotificationCompat
+import com.example.pacecomplication.serviceLocation.LocationService
 
 /**
  * LocationNotificationHelper — сборка Foreground-уведомления для LocationService.

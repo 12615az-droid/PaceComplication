@@ -1,4 +1,4 @@
-package com.example.pacecomplication
+package com.example.pacecomplication.serviceLocation
 
 import GPSLog
 import SensorLog
@@ -10,18 +10,15 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
-import android.os.Looper
 import android.util.Log
+import com.example.pacecomplication.LocationNotificationHelper
+import com.example.pacecomplication.LocationRepository
 import com.example.pacecomplication.logger.AppEventData
 import com.example.pacecomplication.logger.EventsLog
 import com.example.pacecomplication.logger.SourceEvent
 import com.example.pacecomplication.logger.TypeEvent
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -32,8 +29,6 @@ import org.koin.android.ext.android.inject
 
 class LocationService : Service() {
 
-    // 1. ИНЪЕКЦИЯ: Берем готовые инструменты через Koin
-    // (Убедись, что LocationNotificationHelper добавлен в AppModule)
     private val locationRepository: LocationRepository by inject()
     private val notificationHelper: LocationNotificationHelper by inject()
     private val sensorTracker: SensorTracker by inject()
@@ -43,23 +38,28 @@ class LocationService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var sensorLogJob: Job? = null
 
-
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var locationCallback: LocationCallback
+    // 1. Заменяем жесткую привязку FusedLocationProviderClient на ваш интерфейс
+    private lateinit var locationProvider: LocationWrapper
 
     override fun onCreate() {
         super.onCreate()
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         notificationHelper.createNotificationChannel()
 
-        // Настраиваем логику callback (но пока не запускаем)
-        setupLocationLogic()
+        // 2. Проверяем доступность Google Play Services
+        val isGmsAvailable = GoogleApiAvailability.getInstance()
+            .isGooglePlayServicesAvailable(this) == ConnectionResult.SUCCESS
+
+        // 3. Выбираем реализацию "под капотом"
+        locationProvider = if (isGmsAvailable) {
+            Log.i("LocationService", "GMS доступны. Используем GmsLocation.")
+            GmsLocation(this)
+        } else {
+            Log.i("LocationService", "GMS недоступны. Переход на нативный AndroidLocation.")
+            AndroidLocation(this)
+        }
     }
 
-    /**
-     * ГЛАВНЫЙ ПУЛЬТ УПРАВЛЕНИЯ
-     * Сюда приходят команды из LocationRepository: "START" или "STOP"
-     */
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (val action = intent?.action) {
             "START" -> {
@@ -71,12 +71,15 @@ class LocationService : Service() {
 
                 if (Build.VERSION.SDK_INT >= 34) {
                     startForeground(
-                        LocationNotificationHelper.NOTIFICATION_ID,
+                        LocationNotificationHelper.Companion.NOTIFICATION_ID,
                         notification,
                         ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
                     )
                 } else {
-                    startForeground(LocationNotificationHelper.NOTIFICATION_ID, notification)
+                    startForeground(
+                        LocationNotificationHelper.Companion.NOTIFICATION_ID,
+                        notification
+                    )
                 }
 
                 startLocationUpdates()
@@ -96,7 +99,10 @@ class LocationService : Service() {
 
                 val pausedNotification = notificationHelper.getNotification("Пауза", 0f)
                 val manager = getSystemService(NotificationManager::class.java)
-                manager.notify(LocationNotificationHelper.NOTIFICATION_ID, pausedNotification)
+                manager.notify(
+                    LocationNotificationHelper.Companion.NOTIFICATION_ID,
+                    pausedNotification
+                )
 
                 logServiceEvent(
                     type = TypeEvent.SERVICE_STOPPED,
@@ -177,57 +183,40 @@ class LocationService : Service() {
         }
     }
 
-    private fun setupLocationLogic() {
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                val locations = locationResult.locations
-                val batchSize = locations.size
-                locations.forEachIndexed { index, location ->
-                    // Передаем данные в репозиторий
-                    val paceUpdate = locationRepository.updatePace(location)
+    @SuppressLint("MissingPermission")
+    private fun startLocationUpdates() {
+        // Логика из setupLocationLogic переезжает сюда
+        locationProvider.startUpdates { location ->
+            // Передаем данные в репозиторий
+            val paceUpdate = locationRepository.updatePace(location)
 
-                    // Пишем логи
-                    serviceScope.launch {
-                        gpsLog.logLocation(
-                            sessionId = locationRepository.currentSessionId.value,
-                            location = location,
-                            paceUpdate = paceUpdate,
-                            workoutState = locationRepository.workoutState.value,
-                            mode = locationRepository.activityMode.value,
-                            batchSize = batchSize,
-                            batchIndex = index
-                        )
-                    }
-
-                    // Обновляем уведомление (то, что было в stopPaceService)
-                    updateNotification(paceUpdate?.paceText, location.accuracy)
-                }
+            // Пишем логи. Так как LocationWrapper выдает по одной точке (без batch),
+            // жестко задаем batchSize = 1, batchIndex = 0.
+            serviceScope.launch {
+                gpsLog.logLocation(
+                    sessionId = locationRepository.currentSessionId.value,
+                    location = location,
+                    paceUpdate = paceUpdate,
+                    workoutState = locationRepository.workoutState.value,
+                    mode = locationRepository.activityMode.value,
+                    batchSize = 1,
+                    batchIndex = 0
+                )
             }
+
+            updateNotification(paceUpdate?.paceText, location.accuracy)
+        }
+    }
+
+    private fun stopLocationUpdates() {
+        if (::locationProvider.isInitialized) {
+            locationProvider.stopUpdates()
         }
     }
 
     private fun updateNotification(text: String?, accuracy: Float) {
         if (text.isNullOrBlank()) return
-        notificationHelper.showNotification(text, accuracy) // Используем метод хелпера
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun startLocationUpdates() {
-        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000)
-            .setMinUpdateIntervalMillis(500).build()
-
-        fusedLocationClient.requestLocationUpdates(
-            request, locationCallback, Looper.getMainLooper()
-
-
-        )
-    }
-
-    private fun stopLocationUpdates() {
-
-        if (::locationCallback.isInitialized) {
-            fusedLocationClient.removeLocationUpdates(locationCallback)
-        }
+        notificationHelper.showNotification(text, accuracy)
     }
 
     override fun onDestroy() {
@@ -235,12 +224,10 @@ class LocationService : Service() {
         Log.e("Destroy", "fun onDestroy ")
         stopLocationUpdates()
         stopSensorLogging()
-        notificationHelper.cancelNotification() // Убираем уведомление совсем
+        notificationHelper.cancelNotification()
         notificationHelper.destroyMediaSession()
         locationRepository.destroySave()
         locationRepository.syncWithWear()
-
-
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

@@ -15,17 +15,20 @@ import com.example.pacecomplication.R
 
 class TrainingWearService : Service() {
 
+
     companion object {
         private const val TAG = "TRAINING_WEAR_SERVICE"
         private const val NOTIFICATION_ID = 101
         private const val CHANNEL_ID = "sync_channel"
     }
 
+
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
         Log.d(TAG, "onCreate: service created")
     }
+
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action

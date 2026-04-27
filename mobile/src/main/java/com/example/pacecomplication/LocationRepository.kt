@@ -16,6 +16,7 @@ import com.example.pacecomplication.modes.TrainingMode
 import com.example.pacecomplication.modes.TrainingModes
 import com.example.pacecomplication.pace.PaceCalculator
 import com.example.pacecomplication.pace.PaceUpdate
+import com.example.pacecomplication.serviceLocation.LocationService
 import com.example.pacecomplication.timer.PaceTimer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

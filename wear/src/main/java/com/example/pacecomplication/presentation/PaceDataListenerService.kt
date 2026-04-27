@@ -10,6 +10,7 @@ import com.google.android.gms.wearable.WearableListenerService
 
 class PaceDataListenerService : WearableListenerService() {
 
+
     override fun onDataChanged(dataEvents: DataEventBuffer) {
         dataEvents.forEach { event ->
             // 1. Проверяем, что это изменение данных и путь совпадает с тем, что мы слали
@@ -30,6 +31,7 @@ class PaceDataListenerService : WearableListenerService() {
         }
     }
 
+
     override fun onPeerDisconnected(node: Node) {
         super.onPeerDisconnected(node)
         Log.d("WearData", "Связь с телефоном потеряна: ${node.displayName}")
@@ -39,5 +41,11 @@ class PaceDataListenerService : WearableListenerService() {
             action = "KILL"
         }
         startService(intent)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // 3. Обязательно отменяем scope при уничтожении сервиса
+
     }
 }
