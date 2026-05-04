@@ -29,29 +29,43 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.pacecomplication.modes.WalkingMode
 import com.example.pacecomplication.ui.TrainingViewModel
 import com.example.pacecomplication.ui.goals.GoalsDialog
 import org.koin.androidx.compose.koinViewModel
 
-/**
- * TrainingSetupScreen — экран подготовки перед стартом тренировки (IDLE).
- *
- * Тут:
- * - выбор режима (Бег/Ходьба)
- * - короткая подсказка
- * - большая кнопка "Старт"
- *
- * Логики репозитория тут НЕТ — только UI + колбэки.
- */
+
 @Composable
-fun TrainingSetupScreen(
+fun TrainingSetupScreenRoute(
     modifier: Modifier = Modifier,
     viewModel: TrainingViewModel = koinViewModel()
 ) {
     val mode by viewModel.activityMode.collectAsState()
     val isGoalSetupOpen by viewModel.isGoalSetupOpen.collectAsState()
+    TrainingSetupScreen(
+        modifier = modifier,
+        isWalking = mode == WalkingMode,
+        isGoalSetupOpen = isGoalSetupOpen,
+        onCloseGoalSetup = viewModel::onCloseGoalSetup,
+        onModeToggle = viewModel::onModeChanged,
+        onOpenGoalSetup = viewModel::onOpenGoalSetup,
+        onStartClick = viewModel::startTracking
+    )
+}
+
+@Composable
+fun TrainingSetupScreen(
+    modifier: Modifier = Modifier,
+    isWalking: Boolean,
+    isGoalSetupOpen: Boolean,
+    onCloseGoalSetup: () -> Unit,
+    onModeToggle: () -> Unit,
+    onOpenGoalSetup: () -> Unit,
+    onStartClick: () -> Unit
+) {
+
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -64,7 +78,7 @@ fun TrainingSetupScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            GoalsDialog(isGoalSetupOpen, { viewModel.onCloseGoalSetup() }, {})
+            GoalsDialog(isGoalSetupOpen, onCloseGoalSetup, {})
 
             SetupHeader()
 
@@ -72,14 +86,14 @@ fun TrainingSetupScreen(
             Spacer(Modifier.height(24.dp))
 
             ModeSelectionCard(
-                isWalking = mode == WalkingMode,
-                onModeToggle = { viewModel.onModeChanged() }
+                isWalking = isWalking,
+                onModeToggle = onModeToggle
             )
 
             Spacer(Modifier.height(16.dp))
 
             GoalsSelectionCard(
-                onClick = { viewModel.onOpenGoalSetup() }
+                onClick = onOpenGoalSetup
             )
 
             Spacer(Modifier.height(16.dp))
@@ -89,7 +103,7 @@ fun TrainingSetupScreen(
             Spacer(Modifier.weight(1f))
 
             StartWorkoutButton(
-                onClick = { viewModel.startTracking() }
+                onClick = onStartClick
             )
 
             Spacer(Modifier.height(16.dp))
@@ -303,6 +317,20 @@ private fun StartWorkoutButton(
 }
 
 
+@Preview(showBackground = true)
+@Composable
+private fun TrainingSetupScreenPreview() {
+    MaterialTheme {
+        TrainingSetupScreen(
+            isWalking = false,
+            isGoalSetupOpen = false,
+            onCloseGoalSetup = {},
+            onModeToggle = {},
+            onOpenGoalSetup = {},
+            onStartClick = {}
+        )
+    }
+}
 
 
 

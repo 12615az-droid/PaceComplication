@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.example.pacecomplication.ui.PaceScreen
+import com.example.pacecomplication.ui.PaceScreenRoute
 import com.example.pacecomplication.ui.RunningAppTheme
 
 
@@ -36,7 +37,7 @@ class MainActivity : ComponentActivity() {
             RunningAppTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
 
-                    PaceScreen()
+                    PaceScreenRoute()
 
 
                 }

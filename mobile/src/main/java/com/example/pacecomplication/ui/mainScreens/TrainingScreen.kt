@@ -1,5 +1,6 @@
 package com.example.pacecomplication.ui.mainScreens
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -26,18 +27,19 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pacecomplication.R
 import com.example.pacecomplication.WorkoutState
 import com.example.pacecomplication.timer.WorkoutTimer
 import com.example.pacecomplication.ui.TrainingViewModel
+import kotlinx.coroutines.flow.StateFlow
 import org.koin.androidx.compose.koinViewModel
 
 
@@ -83,14 +85,35 @@ fun getSignalStatus(accuracy: Float): SignalStatus {
 
 
 @Composable
-fun TrainingScreen(
+fun TrainingScreenRoute(
     viewModel: TrainingViewModel = koinViewModel()
 ) {
-    // Определяем визуальный статус GPS-сигнала (цвет + текст)
-    val pace by viewModel.currentPace.collectAsState(initial = "0:00")
-    val accuracy by viewModel.currentGPSAccuracy.collectAsState(initial = 0f)
-    val timeMs by viewModel.trainingTimeMs.collectAsState(initial = 0L)
-    val workoutState by viewModel.workoutState.collectAsState()
+
+
+    TrainingScreen(
+        pace = viewModel.currentPace.collectAsStateValue("0:00"),
+        accuracy = viewModel.currentGPSAccuracy.collectAsStateValue(0f),
+        timeMs = viewModel.trainingTimeMs.collectAsStateValue(0L),
+        workoutState = viewModel.workoutState.collectAsStateValue(WorkoutState.IDLE),
+        totalDistance = viewModel.totalDistance.collectAsStateValue(0.0),
+        onStartClick = viewModel::startTracking,
+        onStopClick = viewModel::stopTracking,
+        onSaveClick = viewModel::saveTracking
+    )
+}
+
+@Composable
+fun TrainingScreen(
+    pace: String,
+    accuracy: Float,
+    timeMs: Long,
+    workoutState: WorkoutState,
+    onStartClick: () -> Unit,
+    onStopClick: () -> Unit,
+    onSaveClick: () -> Unit,
+    totalDistance: Double
+) {
+
     val status = getSignalStatus(accuracy)
     val workTime = WorkoutTimer()
     Surface(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
@@ -113,7 +136,7 @@ fun TrainingScreen(
 
             // Темп + точность + бейдж (визуальный статус сигнала)
             PaceStatusBlock(
-                pace = pace, accuracy = accuracy, status = status
+                pace = pace, accuracy = accuracy, status = status,totalDistance
             )
 
             Spacer(Modifier.height(24.dp))
@@ -121,9 +144,9 @@ fun TrainingScreen(
             // Кнопки управления трекингом
             ControlButtons(
                 workoutState = workoutState,
-                onStartClick = { viewModel.startTracking() },
-                onStopClick = { viewModel.stopTracking() },
-                onSaveClick = { viewModel.saveTracking() },
+                onStartClick = onStartClick,
+                onStopClick = onStopClick,
+                onSaveClick = onSaveClick,
                 isSaveEnabled = workoutState == WorkoutState.ACTIVE && timeMs > 0
             )
 
@@ -146,13 +169,17 @@ fun TrainingScreen(
  */
 @Composable
 fun PaceStatusBlock(
-    pace: String, accuracy: Float, status: SignalStatus
+    pace: String, accuracy: Float, status: SignalStatus,totalDistance: Double
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
         // Главный крупный текст темпа
         Text(
             text = pace, fontSize = 100.sp, fontWeight = FontWeight.Black, color = status.color
+        )
+        DistanceText(
+            distanceKm = totalDistance
+
         )
 
         // Точность: если нет сигнала -> "готовность", иначе показываем число
@@ -307,4 +334,41 @@ fun ControlButtons(
         }
     }
 }
+@SuppressLint("DefaultLocale")
+@Composable
+fun DistanceText(
+    distanceKm: Double,
+    modifier: Modifier = Modifier
+) {
+    val formatted = String.format("%.2f", distanceKm)
+
+    Text(
+        text = "$formatted km",
+        modifier = modifier,
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+    )
+}
+
+@Composable
+private fun <T> StateFlow<T>.collectAsStateValue(initial: T): T =
+    collectAsState(initial = initial).value
+
+@Preview(showBackground = true)
+@Composable
+private fun TrainingScreenPreview() {
+    MaterialTheme {
+        TrainingScreen(
+            pace = "5:10",
+            accuracy = 7.5f,
+            timeMs = 183_000L,
+            workoutState = WorkoutState.ACTIVE,
+            onStartClick = {},
+            onStopClick = {},
+            onSaveClick = {},
+            totalDistance = 10000.67
+        )
+    }
+}
+
 

@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -33,7 +34,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.pacecomplication.WorkoutState
 import com.example.pacecomplication.ui.mainScreens.SettingsScreen
 import com.example.pacecomplication.ui.mainScreens.TrainingScreen
+import com.example.pacecomplication.ui.mainScreens.TrainingScreenRoute
 import com.example.pacecomplication.ui.mainScreens.TrainingSetupScreen
+import com.example.pacecomplication.ui.mainScreens.TrainingSetupScreenRoute
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
@@ -92,8 +95,17 @@ private val bottomItems = listOf(Screen.Training, Screen.History, Screen.Setting
  * - упрощается тестирование и поддержка
  */
 @Composable
-fun PaceScreen(
+fun PaceScreenRoute(
     viewModel: TrainingViewModel = koinViewModel()
+) {
+    val workoutState by viewModel.workoutState.collectAsState()
+    PaceScreen(workoutState = workoutState, onPermissionGrantedStart = viewModel::startTracking)
+}
+
+@Composable
+fun PaceScreen(
+    workoutState: WorkoutState,
+    onPermissionGrantedStart: () -> Unit
 ) {
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -107,7 +119,7 @@ fun PaceScreen(
 
         if (isFineGranted && isNotificationGranted) {
             // Если дали добро — командуем модели "Газ!"
-            viewModel.startTracking()
+            onPermissionGrantedStart()
         } else {
             // Тут можно показать Toast "Нужны разрешения для работы"
         }
@@ -123,47 +135,29 @@ fun PaceScreen(
         }
     }.toTypedArray()
 
-    val workoutState by viewModel.workoutState.collectAsState()
+
 
 
 
     if (workoutState == WorkoutState.IDLE) {
-        PaceAppShell()
+        PaceAppShellRoute()
     } else {
-        TrainingScreen()
+        TrainingScreenRoute()
     }
 }
 
 
-/**
- * PaceAppShell — основной UI-каркас приложения.
- *
- * Назначение:
- * - создаёт и хранит NavController
- * - задаёт Scaffold (контейнер всего экрана)
- * - отображает нижнюю панель навигации
- * - переключает экраны через NavHost
- *
- * Ответственность:
- * - управление структурой экранов
- * - навигация между вкладками (Training / History / Settings)
- *
- * Важно:
- * - бизнес-логики здесь нет
- * - данные и события приходят извне
- * - визуальные экраны подключаются через NavHost
- *
- * Параметры:
- * @param pace        текущий темп для экрана тренировки
- * @param accuracy    точность GPS (метры)
- * @param isWalking   флаг режима активности (по текущему неймингу проекта)
- * @param onStartClick  обработчик кнопки "Старт"
- * @param onStopClick   обработчик кнопки "Стоп"
- * @param onSaveClick   обработчик кнопки "Сохранить"
- * @param onModeChanged обработчик смены режима (бег / ходьба)
- */
+@Composable
+fun PaceAppShellRoute(
+    viewModel: TrainingViewModel = koinViewModel()
+) {
+    PaceAppShell(onScreenChanged = viewModel::logScreenChanged)
+}
+
+
 @Composable
 fun PaceAppShell(
+    onScreenChanged: (String) -> Unit
 ) {
     // Контроллер навигации между экранами нижнего меню
     val navController = rememberNavController()
@@ -185,6 +179,7 @@ fun PaceAppShell(
         AppNavHost(
             navController = navController,
             modifier = Modifier.padding(innerPadding),
+            onScreenChanged = onScreenChanged
         )
     }
 }
@@ -286,7 +281,7 @@ fun BottomBar(
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    viewModel: TrainingViewModel = koinViewModel()
+    onScreenChanged: (String) -> Unit
 ) {
     LaunchedEffect(navController) {
         navController.currentBackStackEntryFlow
@@ -294,7 +289,7 @@ fun AppNavHost(
             .filterNotNull()
             .distinctUntilChanged()
             .collect { route ->
-                viewModel.logScreenChanged(route)
+                onScreenChanged(route)
             }
     }
     // NavHost — контейнер, который отображает экран согласно текущему route
@@ -304,12 +299,8 @@ fun AppNavHost(
         startDestination = Screen.Training.route, modifier = modifier
     ) {
         composable(Screen.Training.route) {
-            // Главный экран тренировки
-            // TrainingScreen(
-            // state = state,
-            //   actions = actions
-            // )
-            TrainingSetupScreen()
+
+            TrainingSetupScreenRoute()
 
         }
 
@@ -325,6 +316,14 @@ fun AppNavHost(
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+private fun PaceScreenPreview() {
+    PaceScreen(
+        workoutState = WorkoutState.IDLE,
+        onPermissionGrantedStart = {}
+    )
+}
 
 @Composable
 fun HistoryScreen() {

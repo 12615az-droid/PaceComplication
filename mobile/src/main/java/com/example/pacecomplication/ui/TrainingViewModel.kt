@@ -14,6 +14,7 @@ class TrainingViewModel(
     val activityMode = repository.activityMode
     val workoutState = repository.workoutState
     val isGoalSetupOpen = repository.isGoalSetupOpen
+    val totalDistance = repository.totalDistance
 
 
     fun startTracking() = repository.startTracking()

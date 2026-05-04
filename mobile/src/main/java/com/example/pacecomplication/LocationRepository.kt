@@ -45,6 +45,8 @@ enum class WorkoutState(val intState: Int) {
 private const val STOP_THRESHOLD = 0.5f
 private const val ACC_BAD_THRESHOLD = 35f
 private const val PACE_DEFAULT = "0:00"
+var oldLon =0.0
+var oldLat =0.0
 
 class LocationRepository(
     private val paceTimer: PaceTimer = PaceTimer(),
@@ -67,12 +69,16 @@ class LocationRepository(
     // - currentGPSAccuracy: текущая точность GPS (метры)
     private val _currentPace = MutableStateFlow(PACE_DEFAULT)
     val currentPace = _currentPace.asStateFlow()
-
+    var countD = 0
     private val _isGoalSetupOpen = MutableStateFlow(false)
     val isGoalSetupOpen = _isGoalSetupOpen.asStateFlow()
 
     private val _activityMode = MutableStateFlow<TrainingMode>(RunningMode)
     val activityMode = _activityMode.asStateFlow()
+
+    private val _totalDistance = MutableStateFlow(0.0)
+    val totalDistance = _totalDistance.asStateFlow()
+
 
 
     private val _workoutState = MutableStateFlow(WorkoutState.IDLE)
@@ -327,6 +333,9 @@ class LocationRepository(
         // Игнорируем точки, если запись не активна
         if (!isWorkoutActive()) return null
 
+
+        location.latitude
+
         _currentGPSAccuracy.value = location.accuracy
 
         val paceUpdate = paceCalculator.calculate(
@@ -340,13 +349,28 @@ class LocationRepository(
             paceUpdate.paceText,
             workoutState.value.intState
         )
+        updateDistance(location.latitude,location.longitude)
 
         Log.d(TAG, "SPD: ${"%.2f".format(location.speed)} | PACE: ${paceUpdate.paceText}")
 
-        // 1) для лога число (тут выбрал emaPace, но можешь вернуть instantPace)
-        // 2) для уведомления строка
+
         return paceUpdate
     }
+
+
+    fun updateDistance(newLat: Double, newLon:Double){
+        if(!(oldLat==0.0 && oldLon ==0.0 && _currentPace.value =="0:00") && countD==6){
+            val result = FloatArray(1)
+            countD = 0
+            Location.distanceBetween(oldLat,oldLon,newLat,newLon,result)
+            _totalDistance.value+=result[0]
+        }
+        oldLon = newLon
+        oldLat = newLat
+        countD+=1
+    }
+
+
 }
 
 
