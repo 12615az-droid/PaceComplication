@@ -3,17 +3,22 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
 
 android {
-    namespace = "com.example.pacecomplication"
+    namespace = "com.bobon.mypace"
+
+    defaultConfig {
+        applicationId = "com.bobon.mypace"
+    }
     compileSdk = 36
     buildFeatures {
         compose = true // Это говорит компилятору: "Мы работаем в Compose"
     }
 
     defaultConfig {
-        applicationId = "com.example.pacecomplication"
+        applicationId = "com.bobon.mypace"
         minSdk = 30
         targetSdk = 36
         versionCode = 1
@@ -40,6 +45,10 @@ android {
     }
 }
 
+configurations.all {
+    exclude(group = "com.intellij", module = "annotations")
+}
+
 dependencies {
 
     implementation(libs.androidx.material3)
@@ -54,7 +63,6 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.ui.android)
-    implementation(libs.play.services.location.v2110)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
@@ -63,6 +71,9 @@ dependencies {
     implementation(libs.androidx.compose.material)
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.compiler)
     testImplementation(libs.junit)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.material.icons.extended)
@@ -71,4 +82,5 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     debugImplementation(libs.androidx.ui.tooling)
+    ksp(libs.androidx.room.compiler)
 }
