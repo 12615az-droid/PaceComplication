@@ -98,12 +98,18 @@ data class TotalStats(
     fun saveTracking() {
         val id = trainingId.value ?: return
         viewModelScope.launch {
+            val speedKmh = if (trainingTimeMs.value > 0) {
+                totalDistance.value / (trainingTimeMs.value / 3_600_000.0)
+            } else {
+                0.0
+            }
+
             val workout = WorkoutEntity(
                 id = id,
                 startTime = repository.startTime.value ?: return@launch,
                 endTime = System.currentTimeMillis(),
                 totalDistance = totalDistance.value,
-                avgSpeed = totalDistance.value / (trainingTimeMs.value / 3600000),
+                avgSpeed = speedKmh,
                 caloriesBurned = 0,
                 activityType = activityMode.value.id,
                 note = null,

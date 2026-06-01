@@ -49,9 +49,9 @@ fun WorkoutDetailScreen(
                     text = "Режим: ${if (workout.isRunning) "Бег" else "Ходьба"}",
                     style = MaterialTheme.typography.bodyMedium
                 )
-                
+
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -59,9 +59,9 @@ fun WorkoutDetailScreen(
                     DetailStat("Дистанция", workout.distance)
                     DetailStat("Время", workout.duration)
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 DetailStat("Средний темп", workout.pace)
             }
         }
@@ -97,7 +97,7 @@ fun WorkoutDetailScreenPreview() {
     MaterialTheme {
         WorkoutDetailScreen(
             workout = WorkoutHistoryItem(
-                id = 1,
+                id = "1", // Изменено на String для соответствия новой модели
                 date = "Сегодня, 08:30",
                 distance = "5.20 км",
                 duration = "32:15",
