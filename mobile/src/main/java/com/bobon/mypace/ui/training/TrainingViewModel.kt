@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bobon.mypace.domain.model.WorkoutState
 import com.bobon.mypace.domain.usecase.training.ObserveTrainingStateUseCase
-import com.bobon.mypace.domain.usecase.logging.LogScreenChangedUseCase
 import com.bobon.mypace.domain.usecase.training.ContinueTrainingUseCase
 import com.bobon.mypace.domain.usecase.training.PauseTrainingUseCase
 import com.bobon.mypace.domain.usecase.training.SaveCurrentTrainingUseCase
