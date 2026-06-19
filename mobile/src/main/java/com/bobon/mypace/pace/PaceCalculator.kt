@@ -3,12 +3,11 @@ package com.bobon.mypace.pace
 import com.bobon.mypace.filters.PaceFilter
 
 /**
- * PaceCalculator — инкапсулирует расчёт и форматирование темпа.
+ * PaceCalculator — инкапсулирует расчёт темпа.
  *
  * Отвечает за:
  * - фильтрацию входных данных по точности/скорости
  * - вычисление мгновенного темпа и EMA-сглаживание
- * - форматирование результата в строку "мм:сс"
  */
 class PaceCalculator(
     stopThreshold: Float,
@@ -23,6 +22,10 @@ class PaceCalculator(
         paceFilter.reset()
     }
 
+    /**
+     * Рассчитывает темп на основе скорости и точности.
+     * Возвращает PaceUpdate с сырым значением секунд на километр.
+     */
     fun calculate(
         speedMetersPerSec: Float,
         accuracy: Float,
@@ -35,21 +38,7 @@ class PaceCalculator(
             maxSpeedMetersPerSec = maxSpeedMetersPerSec,
             alphaProvider = alphaProvider
         ) ?: return null
-        return PaceUpdate(
-            paceValue = filteredPace,
-            paceText = formatPace(filteredPace)
-        )
-    }
-
-    private fun formatPace(totalSecondsPerKm: Double): String {
-        if (totalSecondsPerKm <= 0) return PACE_DEFAULT
-        val totalSeconds = totalSecondsPerKm.toInt()
-        val minutes = totalSeconds / 60
-        val seconds = totalSeconds % 60
-        return "%d:%02d".format(minutes, seconds)
-    }
-
-    private companion object {
-        const val PACE_DEFAULT = "0:00"
+        
+        return PaceUpdate(secondsPerKm = filteredPace)
     }
 }

@@ -1,4 +1,4 @@
-package com.bobon.mypace.ui.mainScreens
+package com.bobon.mypace.ui.training
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
@@ -36,9 +36,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bobon.mypace.R
-import com.bobon.mypace.WorkoutState
+import com.bobon.mypace.domain.model.WorkoutState
 import com.bobon.mypace.timer.WorkoutTimer
 import com.bobon.mypace.ui.TrainingViewModel
+import com.bobon.mypace.utils.DistanceFormatter
 import kotlinx.coroutines.flow.StateFlow
 import org.koin.androidx.compose.koinViewModel
 
@@ -178,7 +179,7 @@ fun PaceStatusBlock(
             text = pace, fontSize = 100.sp, fontWeight = FontWeight.Black, color = status.color
         )
         DistanceText(
-            distanceKm = totalDistance
+            distanceKm= DistanceFormatter.formatDistance(totalDistance), status = status
 
         )
 
@@ -337,18 +338,21 @@ fun ControlButtons(
 @SuppressLint("DefaultLocale")
 @Composable
 fun DistanceText(
-    distanceKm: Double,
-    modifier: Modifier = Modifier
+    distanceKm: String,
+    modifier: Modifier = Modifier,status: SignalStatus
 ) {
-    val formatted = String.format("%.2f", distanceKm)
+
 
     Text(
-        text = "$formatted km",
+        fontSize = 32.sp,
+        text = "$distanceKm km",
         modifier = modifier,
         style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+        color  = status.color
     )
 }
+
+
 
 @Composable
 private fun <T> StateFlow<T>.collectAsStateValue(initial: T): T =
@@ -366,9 +370,14 @@ private fun TrainingScreenPreview() {
             onStartClick = {},
             onStopClick = {},
             onSaveClick = {},
-            totalDistance = 10000.67
+            totalDistance = 855.0
         )
     }
 }
+
+
+
+
+
 
 

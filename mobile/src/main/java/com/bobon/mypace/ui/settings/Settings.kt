@@ -1,4 +1,4 @@
-package com.bobon.mypace.ui.mainScreens
+package com.bobon.mypace.ui.settings
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.isSystemInDarkTheme

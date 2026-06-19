@@ -1,9 +1,5 @@
-package com.bobon.mypace.ui
+package com.bobon.mypace.ui.main
 
-import android.Manifest
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
@@ -28,11 +24,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.bobon.mypace.WorkoutState
-import com.bobon.mypace.ui.mainScreens.HistoryScreen
-import com.bobon.mypace.ui.mainScreens.SettingsScreen
-import com.bobon.mypace.ui.mainScreens.TrainingScreenRoute
-import com.bobon.mypace.ui.mainScreens.TrainingSetupScreenRoute
+import com.bobon.mypace.domain.model.WorkoutState
+import com.bobon.mypace.ui.TrainingViewModel
+import com.bobon.mypace.ui.history.HistoryScreen
+import com.bobon.mypace.ui.settings.SettingsScreen
+import com.bobon.mypace.ui.training.TrainingScreenRoute
+import com.bobon.mypace.ui.trainingSetup.TrainingSetupScreenRoute
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map

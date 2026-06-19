@@ -1,4 +1,4 @@
-package com.bobon.mypace.ui.goals
+package com.bobon.mypace.ui.trainingSetup.components
 
 
 import androidx.compose.animation.AnimatedVisibility

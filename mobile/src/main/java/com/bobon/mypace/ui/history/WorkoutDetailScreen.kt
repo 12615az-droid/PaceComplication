@@ -1,4 +1,4 @@
-package com.bobon.mypace.ui.mainScreens
+package com.bobon.mypace.ui.history
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons

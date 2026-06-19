@@ -1,7 +1,7 @@
 package com.bobon.mypace.logger
 
 
-import com.bobon.mypace.WorkoutState
+import com.bobon.mypace.domain.model.WorkoutState
 import com.bobon.mypace.logger.LogJson.json
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

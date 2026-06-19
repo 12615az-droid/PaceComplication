@@ -1,4 +1,4 @@
-package com.bobon.mypace.ui
+package com.bobon.mypace.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme

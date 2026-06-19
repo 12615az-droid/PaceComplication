@@ -8,8 +8,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.bobon.mypace.ui.PaceScreenRoute
-import com.bobon.mypace.ui.RunningAppTheme
+import com.bobon.mypace.ui.main.PaceScreenRoute
+import com.bobon.mypace.ui.theme.RunningAppTheme
 
 
 /**

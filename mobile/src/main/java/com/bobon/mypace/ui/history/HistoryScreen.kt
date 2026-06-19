@@ -1,8 +1,8 @@
-package com.bobon.mypace.ui.mainScreens
+package com.bobon.mypace.ui.history
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -17,20 +17,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.bobon.mypace.database.WorkoutEntity
+import com.bobon.mypace.domain.model.Workout
 import com.bobon.mypace.ui.TrainingViewModel
+import com.bobon.mypace.utils.PaceFormatter
 import org.koin.androidx.compose.koinViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import androidx.compose.ui.tooling.preview.Preview
 
 /**
  * Модель данных для истории тренировок
  */
 data class WorkoutHistoryItem(
-    val id: String, // Изменено на String, так как в БД ID может быть строкой
+    val id: String,
     val date: String,
     val distance: String,
     val duration: String,
@@ -38,48 +36,16 @@ data class WorkoutHistoryItem(
     val isRunning: Boolean
 )
 
-// Утилиты для форматирования данных из БД в красивый текст
+// Extension-функция для маппинга доменной модели в модель UI
 @SuppressLint("DefaultLocale")
-fun formatDuration(startTime: Long, endTime: Long): String {
-    val durationMs = endTime - startTime
-    if (durationMs <= 0) return "00:00"
-    val seconds = (durationMs / 1000) % 60
-    val minutes = (durationMs / (1000 * 60)) % 60
-    val hours = (durationMs / (1000 * 60 * 60))
-    return if (hours > 0) {
-        String.format("%d:%02d:%02d", hours, minutes, seconds)
-    } else {
-        String.format("%02d:%02d", minutes, seconds)
-    }
-}
-
-fun formatDate(timeInMillis: Long): String {
-    val formatter = SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault())
-    return formatter.format(Date(timeInMillis))
-}
-
-@SuppressLint("DefaultLocale")
-fun calculatePace(startTime: Long, endTime: Long, distanceMeters: Double): String {
-    if (distanceMeters <= 0) return "0:00 мин/км"
-    val durationMinutes = (endTime - startTime) / 60000.0
-    val distanceKm = distanceMeters / 1000.0
-    val paceMinPerKm = durationMinutes / distanceKm
-
-    val minutes = paceMinPerKm.toInt()
-    val seconds = ((paceMinPerKm - minutes) * 60).toInt()
-    return String.format("%d:%02d мин/км", minutes, seconds)
-}
-
-// Extension-функция для маппинга сущности БД в модель UI
-@SuppressLint("DefaultLocale")
-fun WorkoutEntity.toUiModel(): WorkoutHistoryItem {
+fun Workout.toUiModel(): WorkoutHistoryItem {
     return WorkoutHistoryItem(
         id = this.id,
-        date = formatDate(this.startTime),
+        date = PaceFormatter.formatDate(this.startTime),
         distance = String.format("%.2f км", this.totalDistance / 1000.0),
-        duration = formatDuration(this.startTime, this.endTime),
-        pace = calculatePace(this.startTime, this.endTime, this.totalDistance),
-        isRunning = this.activityType == 1 // Предполагаем, что 1 - это Бег, 2 - Ходьба (как в ViewModel)
+        duration = PaceFormatter.formatDuration(this.startTime, this.endTime),
+        pace = PaceFormatter.calculateAndFormatPace(this.startTime, this.endTime, this.totalDistance),
+        isRunning = this.activityType == 1 // 1 - Бег, 2 - Ходьба
     )
 }
 
@@ -87,14 +53,14 @@ fun WorkoutEntity.toUiModel(): WorkoutHistoryItem {
 fun HistoryScreen(viewModel: TrainingViewModel = koinViewModel()) {
     var selectedWorkout by remember { mutableStateOf<WorkoutHistoryItem?>(null) }
 
-    // Подписываемся на данные из ViewModel
-    val workoutsEntities by viewModel.workouts.collectAsState()
+    // Подписываемся на данные из ViewModel (теперь это List<Workout>)
+    val workoutsList by viewModel.workouts.collectAsState()
     val totalStats by viewModel.totalStats.collectAsState()
     val selectedFilterIndex by viewModel.selectedFilter.collectAsState()
 
-    // Маппим полученные сущности из БД в UI модели
-    val historyList = remember(workoutsEntities) {
-        workoutsEntities.map { it.toUiModel() }
+    // Маппим полученные сущности в UI модели
+    val historyList = remember(workoutsList) {
+        workoutsList.map { it.toUiModel() }
     }
 
     if (selectedWorkout == null) {
@@ -103,7 +69,8 @@ fun HistoryScreen(viewModel: TrainingViewModel = koinViewModel()) {
             totalStats = totalStats,
             selectedFilterIndex = selectedFilterIndex,
             onFilterSelect = { viewModel.selectFilter(it) },
-            onWorkoutClick = { selectedWorkout = it }
+            onWorkoutClick = { selectedWorkout = it },
+            deleteTrack = { viewModel.deleteTrack(it) }
         )
     } else {
         WorkoutDetailScreen(
@@ -119,7 +86,8 @@ fun HistoryListContent(
     totalStats: TrainingViewModel.TotalStats,
     selectedFilterIndex: Int,
     onFilterSelect: (Int) -> Unit,
-    onWorkoutClick: (WorkoutHistoryItem) -> Unit
+    onWorkoutClick: (WorkoutHistoryItem) -> Unit,
+    deleteTrack: (String) -> Unit
 ) {
     val filters = listOf("Все", "Бег", "Ходьба")
 
@@ -132,7 +100,6 @@ fun HistoryListContent(
         Text(text = "История", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Передаем статистику из БД
         TotalStatsHeader(totalStats)
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -162,7 +129,11 @@ fun HistoryListContent(
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
                 items(historyList, key = { it.id }) { item ->
-                    WorkoutCard(item = item, onClick = { onWorkoutClick(item) })
+                    WorkoutCard(
+                        item = item,
+                        onClick = { onWorkoutClick(item) },
+                        onLongPress = { deleteTrack(item.id) }
+                    )
                 }
             }
         }
@@ -186,7 +157,6 @@ fun TotalStatsHeader(totalStats: TrainingViewModel.TotalStats) {
             StatItem("Дистанция", String.format("%.2f", totalStats.distanceKm), "км")
             StatItem("Занятий", totalStats.workoutCount.toString(), "")
 
-            // Конвертация часов в часы и минуты
             val hours = totalStats.totalHours.toInt()
             val minutes = ((totalStats.totalHours - hours) * 60).toInt()
             StatItem("Время", String.format("%d:%02d", hours, minutes), "ч")
@@ -206,13 +176,22 @@ fun StatItem(label: String, value: String, unit: String) {
 }
 
 @Composable
-fun WorkoutCard(item: WorkoutHistoryItem, onClick: () -> Unit) {
+fun WorkoutCard(
+    item: WorkoutHistoryItem,
+    onClick: () -> Unit,
+    onLongPress: () -> Unit
+) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     Surface(
         tonalElevation = 2.dp,
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = { showDeleteDialog = true }
+            )
     ) {
         Row(
             modifier = Modifier
@@ -246,4 +225,83 @@ fun WorkoutCard(item: WorkoutHistoryItem, onClick: () -> Unit) {
             }
         }
     }
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Удалить тренировку?") },
+            text = { Text("${item.date} • ${item.distance}") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onLongPress()
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text("Удалить", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Отмена")
+                }
+            }
+        )
+    }
 }
+
+
+
+
+@Preview(
+    name = "History Screen - With workouts",
+    showBackground = true,
+    showSystemUi = true
+)
+@Composable
+fun HistoryListContentPreview() {
+    MaterialTheme {
+        HistoryListContent(
+            historyList = listOf(
+                WorkoutHistoryItem(
+                    id = "1",
+                    date = "16 июня 2026",
+                    distance = "5.24 км",
+                    duration = "00:28:14",
+                    pace = "5:23 мин/км",
+                    isRunning = true
+                ),
+                WorkoutHistoryItem(
+                    id = "2",
+                    date = "15 июня 2026",
+                    distance = "3.10 км",
+                    duration = "00:35:42",
+                    pace = "11:31 мин/км",
+                    isRunning = false
+                ),
+                WorkoutHistoryItem(
+                    id = "3",
+                    date = "13 июня 2026",
+                    distance = "10.00 км",
+                    duration = "00:57:08",
+                    pace = "5:43 мин/км",
+                    isRunning = true
+                )
+            ),
+            totalStats = TrainingViewModel.TotalStats(
+                distanceKm = 18.34,
+                workoutCount = 3,
+                totalHours = 2.01
+            ),
+            selectedFilterIndex = 0,
+            onFilterSelect = {},
+            onWorkoutClick = {},
+            deleteTrack = {}
+        )
+    }
+}
+
+
+
+
+
+

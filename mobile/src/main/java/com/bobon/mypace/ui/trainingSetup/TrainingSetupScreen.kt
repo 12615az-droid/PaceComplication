@@ -1,39 +1,26 @@
-package com.bobon.mypace.ui.mainScreens
+package com.bobon.mypace.ui.trainingSetup
 
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.bobon.mypace.modes.WalkingMode
 import com.bobon.mypace.ui.TrainingViewModel
-import com.bobon.mypace.ui.goals.GoalsDialog
+import com.bobon.mypace.ui.trainingSetup.components.GoalsDialog
 import org.koin.androidx.compose.koinViewModel
 
 
@@ -42,17 +29,168 @@ fun TrainingSetupScreenRoute(
     modifier: Modifier = Modifier,
     viewModel: TrainingViewModel = koinViewModel()
 ) {
+    val context = LocalContext.current
+    val activity = context as Activity
+
     val mode by viewModel.activityMode.collectAsState()
     val isGoalSetupOpen by viewModel.isGoalSetupOpen.collectAsState()
-    TrainingSetupScreen(
-        modifier = modifier,
-        isWalking = mode == WalkingMode,
-        isGoalSetupOpen = isGoalSetupOpen,
-        onCloseGoalSetup = viewModel::onCloseGoalSetup,
-        onModeToggle = viewModel::onModeChanged,
-        onOpenGoalSetup = viewModel::onOpenGoalSetup,
-        onStartClick = viewModel::startTracking
-    )
+
+    // Диалоги
+    val showRationale by viewModel.showRationaleDialog.collectAsState()
+    val showSettings by viewModel.showSettingsDialog.collectAsState()
+    val showLocationServices by viewModel.showLocationServicesDialog.collectAsState()
+    val showRetry by viewModel.showRetryDialog.collectAsState()
+    val showPreciseLocation by viewModel.showPreciseLocationDialog.collectAsState()
+
+
+    // Снэкбар
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Лаунчер
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        viewModel.onPermissionResult(activity, results)
+    }
+
+    // Слушаем снэкбар сообщения
+    LaunchedEffect(Unit) {
+        viewModel.snackbarMessage.collect { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+
+    val launchPermissionRequest by viewModel.launchPermissionRequest.collectAsState()
+
+    LaunchedEffect(launchPermissionRequest) {
+        if (launchPermissionRequest) {
+            permissionLauncher.launch(viewModel.getRequiredPermissions())
+            viewModel.onPermissionRequestLaunched()
+        }
+    }
+
+    // При возврате из настроек
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.dismissDialogs()
+    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        // === ДИАЛОГИ ===
+
+        // Rationale (перед первым запросом)
+        if (showRationale) {
+            AlertDialog(
+                onDismissRequest = { viewModel.onDismissRationaleDialog() },
+                title = { Text("Требуются разрешения") },
+                text = { Text(viewModel.getPermissionRationaleText()) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.onRationaleConfirm()
+                        permissionLauncher.launch(viewModel.getRequiredPermissions())
+                    }) {
+                        Text("Понятно, продолжить")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.onDismissRationaleDialog() }) {
+                        Text("Позже")
+                    }
+                }
+            )
+        }
+        if (showLocationServices) {
+            AlertDialog(
+                onDismissRequest = { viewModel.onDismissLocationDialog() },
+                title = { Text("Геолокация выключена") },
+                text = { Text(viewModel.getLocationDisabledText()) },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.onOpenLocationSettings() }) {
+                        Text("Включить GPS")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.onDismissLocationDialog() }) {
+                        Text("Позже")
+                    }
+                }
+            )
+        }
+
+// Разрешения заблокированы
+        if (showSettings) {
+            AlertDialog(
+                onDismissRequest = { viewModel.onDismissSettingsDialog() },
+                title = { Text("Разрешения заблокированы") },
+                text = { Text(viewModel.getPermissionsBlockedText()) },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.onOpenSettings() }) {
+                        Text("Открыть настройки")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.onDismissSettingsDialog() }) {
+                        Text("Позже")
+                    }
+                }
+            )
+        }
+        if (showPreciseLocation) {
+            AlertDialog(
+                onDismissRequest = { viewModel.onDismissPreciseLocationDialog() },
+                title = { Text("Нужна точная геолокация") },
+                text = { Text(viewModel.getPreciseLocationRequiredText()) },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.onOpenAppSettingsForPrecise() }) {
+                        Text("В настройки")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.onDismissPreciseLocationDialog() }) {
+                        Text("Позже")
+                    }
+                }
+            )
+        }
+
+        // Retry (после отказа, можно ещё раз объяснить)
+        if (showRetry) {
+            AlertDialog(
+                onDismissRequest = { viewModel.onDismissRetryDialog() },
+                title = { Text("Разрешение необходимо") },
+                text = {
+                    Text(
+                        "Без точной геолокации приложение не может работать.\n\n" +
+                                "Пожалуйста, предоставьте доступ."
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.onRetryRequest()
+                        permissionLauncher.launch(viewModel.getRequiredPermissions())
+                    }) {
+                        Text("Предоставить")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.onOpenSettings() }) {
+                        Text("В настройки")
+                    }
+                }
+            )
+        }
+
+
+
+        // === UI ===
+        TrainingSetupScreen(
+            modifier = modifier,
+            isWalking = mode == WalkingMode,
+            isGoalSetupOpen = isGoalSetupOpen,
+            onCloseGoalSetup = viewModel::closeGoalSetupDialog,
+            onModeToggle = viewModel::changeMode,
+            onOpenGoalSetup = viewModel::openGoalSetupDialog,
+            onStartClick = { viewModel.onStartClick(activity) }
+        )
+    }
 }
 
 @Composable
@@ -331,6 +469,3 @@ private fun TrainingSetupScreenPreview() {
         )
     }
 }
-
-
-
