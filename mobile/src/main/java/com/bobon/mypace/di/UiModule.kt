@@ -11,11 +11,10 @@ val uiModule = module {
 
     viewModel {
         TrainingViewModel(
-            trainingManager = get(),
-            startTraining = get(),
+            observeTrainingState = get(),
+            continueTraining = get(),
             pauseTraining = get(),
             saveCurrentTraining = get(),
-            logScreenChangedUseCase = get()
         )
 
     }

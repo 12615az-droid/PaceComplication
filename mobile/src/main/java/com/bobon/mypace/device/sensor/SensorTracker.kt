@@ -1,3 +1,4 @@
+package com.bobon.mypace.device.sensor
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent

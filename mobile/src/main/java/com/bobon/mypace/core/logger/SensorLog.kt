@@ -1,6 +1,7 @@
 import android.hardware.Sensor
 import com.bobon.mypace.core.logger.JsonlFileWriter
 import com.bobon.mypace.core.logger.LogFilesManager
+import com.bobon.mypace.device.sensor.SensorData
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable

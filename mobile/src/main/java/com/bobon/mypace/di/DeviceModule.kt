@@ -1,7 +1,6 @@
 package com.bobon.mypace.di
 
 import SensorLog
-import SensorTracker
 import com.bobon.mypace.device.notification.LocationNotificationHelper
 import com.bobon.mypace.core.logger.EventsLog
 import com.bobon.mypace.core.logger.GPSLog
@@ -21,6 +20,8 @@ import com.bobon.mypace.device.service.AndroidTrainingServiceController
 import com.bobon.mypace.domain.service.TrainingServiceController
 import com.bobon.mypace.device.permission.AndroidPermissionManager
 import com.bobon.mypace.device.permission.PermissionManager
+import com.bobon.mypace.device.sensor.SensorTracker
+
 val deviceModule = module {
 
     single<DistanceCalculator> {

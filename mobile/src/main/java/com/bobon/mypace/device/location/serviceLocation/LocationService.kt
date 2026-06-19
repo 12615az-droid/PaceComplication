@@ -1,8 +1,8 @@
 package com.bobon.mypace.device.location.serviceLocation
 
 
+
 import SensorLog
-import SensorTracker
 import android.annotation.SuppressLint
 import android.app.Service
 import android.content.Intent
@@ -18,6 +18,7 @@ import com.bobon.mypace.core.logger.EventsLog
 import com.bobon.mypace.core.logger.GPSLog
 import com.bobon.mypace.core.logger.SourceEvent
 import com.bobon.mypace.core.logger.TypeEvent
+import com.bobon.mypace.device.sensor.SensorTracker
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import kotlinx.coroutines.CoroutineScope

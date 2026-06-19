@@ -8,7 +8,9 @@ import com.bobon.mypace.domain.training.TrainingManager
 import com.bobon.mypace.domain.usecase.logging.LogScreenChangedUseCase
 import com.bobon.mypace.domain.usecase.training.ChangeTrainingModeUseCase
 import com.bobon.mypace.domain.usecase.training.CheckStartWorkoutAvailabilityUseCase
+import com.bobon.mypace.domain.usecase.training.ContinueTrainingUseCase
 import com.bobon.mypace.domain.usecase.training.FinishTrainingUseCase
+import com.bobon.mypace.domain.usecase.training.ObserveTrainingStateUseCase
 import com.bobon.mypace.domain.usecase.training.PauseTrainingUseCase
 import com.bobon.mypace.domain.usecase.training.SaveCurrentTrainingUseCase
 import com.bobon.mypace.domain.usecase.training.StartTrainingUseCase
@@ -63,6 +65,18 @@ val domainModule = module {
         StartTrainingUseCase(
             trainingManager = get(),
             trainingServiceController = get()
+        )
+    }
+    single {
+        ObserveTrainingStateUseCase(
+            trainingManager = get()
+        )
+    }
+
+    single {
+        ContinueTrainingUseCase(
+            trainingManager = get(),
+            startTraining = get()
         )
     }
 
