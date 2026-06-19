@@ -18,8 +18,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import com.bobon.mypace.modes.WalkingMode
-import com.bobon.mypace.ui.TrainingViewModel
+import com.bobon.mypace.domain.training.modes.WalkingMode
 import com.bobon.mypace.ui.trainingSetup.components.GoalsDialog
 import org.koin.androidx.compose.koinViewModel
 
@@ -27,7 +26,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun TrainingSetupScreenRoute(
     modifier: Modifier = Modifier,
-    viewModel: TrainingViewModel = koinViewModel()
+    viewModel: TrainingSetupViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
     val activity = context as Activity

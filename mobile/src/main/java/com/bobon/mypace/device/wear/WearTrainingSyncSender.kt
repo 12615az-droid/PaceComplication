@@ -1,6 +1,6 @@
 package com.bobon.mypace.device.wear
 
-import com.bobon.mypace.WearDataSender
+import com.bobon.mypace.device.wear.WearDataSender
 import com.bobon.mypace.domain.training.TrainingSyncSender
 
 class WearTrainingSyncSender(

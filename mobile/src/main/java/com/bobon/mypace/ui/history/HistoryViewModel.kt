@@ -9,7 +9,7 @@ import com.bobon.mypace.domain.usecase.workout.ObserveTotalStatsUseCase
 import com.bobon.mypace.domain.usecase.workout.ObserveWorkoutsByTypeUseCase
 import com.bobon.mypace.domain.usecase.workout.ObserveWorkoutsUseCase
 import com.bobon.mypace.ui.model.WorkoutHistoryItem
-import com.bobon.mypace.utils.PaceFormatter
+import com.bobon.mypace.core.formatter.PaceFormatter
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted

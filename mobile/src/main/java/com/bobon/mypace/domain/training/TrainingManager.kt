@@ -1,16 +1,12 @@
 package com.bobon.mypace.domain.training
 
-import android.location.Location
-import com.bobon.mypace.WearDataSender
-
 import com.bobon.mypace.domain.model.WorkoutState
-import com.bobon.mypace.modes.RunningMode
-import com.bobon.mypace.modes.TrainingMode
-import com.bobon.mypace.modes.TrainingModes
-import com.bobon.mypace.pace.PaceCalculator
-import com.bobon.mypace.pace.PaceUpdate
-import com.bobon.mypace.timer.PaceTimer
-import com.bobon.mypace.utils.PaceFormatter
+import com.bobon.mypace.domain.training.modes.RunningMode
+import com.bobon.mypace.domain.training.modes.TrainingMode
+import com.bobon.mypace.domain.training.modes.TrainingModes
+import com.bobon.mypace.domain.pace.PaceCalculator
+import com.bobon.mypace.domain.pace.PaceUpdate
+import com.bobon.mypace.domain.timer.PaceTimer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import com.bobon.mypace.domain.distance.DistanceCalculator

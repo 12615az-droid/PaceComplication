@@ -18,14 +18,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.bobon.mypace.domain.model.Workout
-import com.bobon.mypace.ui.history.HistoryViewModel
+
 import com.bobon.mypace.ui.model.WorkoutHistoryItem
-import com.bobon.mypace.utils.PaceFormatter
+
 import org.koin.androidx.compose.koinViewModel
 import androidx.compose.ui.tooling.preview.Preview
 
 import com.bobon.mypace.domain.model.TotalStats
+
 
 /**
  * Модель данных для истории тренировок

@@ -2,17 +2,17 @@ package com.bobon.mypace.di
 
 import SensorLog
 import SensorTracker
-import com.bobon.mypace.LocationNotificationHelper
-import com.bobon.mypace.logger.EventsLog
-import com.bobon.mypace.logger.GPSLog
-import com.bobon.mypace.logger.JsonlFileWriter
-import com.bobon.mypace.logger.LogFilesManager
-import com.bobon.mypace.logger.StateLogStorage
+import com.bobon.mypace.device.notification.LocationNotificationHelper
+import com.bobon.mypace.core.logger.EventsLog
+import com.bobon.mypace.core.logger.GPSLog
+import com.bobon.mypace.core.logger.JsonlFileWriter
+import com.bobon.mypace.core.logger.LogFilesManager
+import com.bobon.mypace.core.logger.StateLogStorage
 
-import com.bobon.mypace.settings.DeveloperSettings
+import com.bobon.mypace.core.settings.DeveloperSettings
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
-import com.bobon.mypace.WearDataSender
+import com.bobon.mypace.device.wear.WearDataSender
 import com.bobon.mypace.device.wear.WearTrainingSyncSender
 import com.bobon.mypace.device.location.AndroidDistanceCalculator
 import com.bobon.mypace.domain.distance.DistanceCalculator

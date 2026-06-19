@@ -27,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,11 +37,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bobon.mypace.R
-import com.bobon.mypace.domain.model.WorkoutState
-import com.bobon.mypace.timer.WorkoutTimer
-import com.bobon.mypace.ui.TrainingViewModel
-import com.bobon.mypace.utils.DistanceFormatter
-import kotlinx.coroutines.flow.StateFlow
+import com.bobon.mypace.domain.timer.WorkoutTimer
+import com.bobon.mypace.core.formatter.DistanceFormatter
 import org.koin.androidx.compose.koinViewModel
 
 
@@ -90,32 +88,28 @@ fun TrainingScreenRoute(
     viewModel: TrainingViewModel = koinViewModel()
 ) {
 
+    val uiState by viewModel.uiState.collectAsState()
 
     TrainingScreen(
-        pace = viewModel.currentPace.collectAsStateValue("0:00"),
-        accuracy = viewModel.currentGPSAccuracy.collectAsStateValue(0f),
-        timeMs = viewModel.trainingTimeMs.collectAsStateValue(0L),
-        workoutState = viewModel.workoutState.collectAsStateValue(WorkoutState.IDLE),
-        totalDistance = viewModel.totalDistance.collectAsStateValue(0.0),
-        onStartClick = viewModel::startTracking,
+        uiState = uiState,
+        onContinueClick = viewModel::continueTracking,
         onStopClick = viewModel::stopTracking,
         onSaveClick = viewModel::saveTracking
     )
 }
 
+
 @Composable
 fun TrainingScreen(
-    pace: String,
-    accuracy: Float,
-    timeMs: Long,
-    workoutState: WorkoutState,
-    onStartClick: () -> Unit,
+    uiState: TrainingUiState,
+    onContinueClick: () -> Unit,
     onStopClick: () -> Unit,
-    onSaveClick: () -> Unit,
-    totalDistance: Double
+    onSaveClick: () -> Unit
 ) {
 
-    val status = getSignalStatus(accuracy)
+
+
+    val status = getSignalStatus(uiState.gpsAccuracyMeters)
     val workTime = WorkoutTimer()
     Surface(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
 
@@ -131,24 +125,27 @@ fun TrainingScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            WorkoutStatsBlock(workTime.formatTimer(timeMs), 323)
+            WorkoutStatsBlock(workTime.formatTimer(uiState.trainingTimeMs), 323)
 
             Spacer(Modifier.height(24.dp))
 
             // Темп + точность + бейдж (визуальный статус сигнала)
             PaceStatusBlock(
-                pace = pace, accuracy = accuracy, status = status,totalDistance
+                pace = uiState.paceText, uiState.gpsAccuracyMeters,
+                status = status,uiState.totalDistanceMeters
             )
 
             Spacer(Modifier.height(24.dp))
 
             // Кнопки управления трекингом
+
             ControlButtons(
-                workoutState = workoutState,
-                onStartClick = onStartClick,
+                isActive = uiState.isActive,
+                isPaused = uiState.isPaused,
+                onContinueClick = onContinueClick,
                 onStopClick = onStopClick,
                 onSaveClick = onSaveClick,
-                isSaveEnabled = workoutState == WorkoutState.ACTIVE && timeMs > 0
+                isSaveEnabled = uiState.trainingTimeMs > 0
             )
 
             Spacer(Modifier.height(24.dp))
@@ -287,11 +284,12 @@ fun WorkoutStatsBlock(
  */
 @Composable
 fun ControlButtons(
-    workoutState: WorkoutState,
-    onStartClick: () -> Unit,
+    isActive: Boolean,
+    isPaused: Boolean,
+    onContinueClick: () -> Unit,
     onStopClick: () -> Unit,
     onSaveClick: () -> Unit,
-    isSaveEnabled: Boolean,
+    isSaveEnabled: Boolean
 ) {
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -299,27 +297,35 @@ fun ControlButtons(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Button(
-            onClick = onStartClick,
-            enabled = workoutState != WorkoutState.ACTIVE,
+            onClick = onContinueClick,
+            enabled = isPaused,
             modifier = Modifier
                 .width(IntrinsicSize.Min)
                 .weight(1f)
                 .widthIn(min = 110.dp)
                 .height(64.dp)
         ) {
-            Text(stringResource(id = R.string.continueButton), maxLines = 1, softWrap = false)
+            Text(
+                text = stringResource(id = R.string.continueButton),
+                maxLines = 1,
+                softWrap = false
+            )
         }
 
         Button(
             onClick = onStopClick,
-            enabled = workoutState == WorkoutState.ACTIVE,
+            enabled = isActive,
             modifier = Modifier
                 .width(IntrinsicSize.Min)
                 .weight(1f)
                 .widthIn(min = 110.dp)
                 .height(64.dp)
         ) {
-            Text(stringResource(id = R.string.StopButton), maxLines = 1, softWrap = false)
+            Text(
+                text = stringResource(id = R.string.StopButton),
+                maxLines = 1,
+                softWrap = false
+            )
         }
 
         Button(
@@ -331,7 +337,11 @@ fun ControlButtons(
                 .widthIn(min = 110.dp)
                 .height(64.dp)
         ) {
-            Text(stringResource(id = R.string.SaveButton), maxLines = 1, softWrap = false)
+            Text(
+                text = stringResource(id = R.string.SaveButton),
+                maxLines = 1,
+                softWrap = false
+            )
         }
     }
 }
@@ -339,38 +349,35 @@ fun ControlButtons(
 @Composable
 fun DistanceText(
     distanceKm: String,
-    modifier: Modifier = Modifier,status: SignalStatus
+    modifier: Modifier = Modifier,
+    status: SignalStatus
 ) {
-
-
     Text(
         fontSize = 32.sp,
         text = "$distanceKm km",
         modifier = modifier,
         style = MaterialTheme.typography.titleMedium,
-        color  = status.color
+        color = status.color
     )
 }
-
-
-
-@Composable
-private fun <T> StateFlow<T>.collectAsStateValue(initial: T): T =
-    collectAsState(initial = initial).value
 
 @Preview(showBackground = true)
 @Composable
 private fun TrainingScreenPreview() {
     MaterialTheme {
         TrainingScreen(
-            pace = "5:10",
-            accuracy = 7.5f,
-            timeMs = 183_000L,
-            workoutState = WorkoutState.ACTIVE,
-            onStartClick = {},
+            uiState = TrainingUiState(
+                paceText = "5:10",
+                gpsAccuracyMeters = 7.5f,
+                trainingTimeMs = 183_000L,
+                activityModeLabel = "Бег",
+                totalDistanceMeters = 855.0,
+                isPaused = false,
+                isActive = true
+            ),
+            onContinueClick = {},
             onStopClick = {},
-            onSaveClick = {},
-            totalDistance = 855.0
+            onSaveClick = {}
         )
     }
 }

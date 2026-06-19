@@ -3,7 +3,7 @@ package com.bobon.mypace.device.service
 import android.content.Context
 import android.content.Intent
 import com.bobon.mypace.domain.service.TrainingServiceController
-import com.bobon.mypace.serviceLocation.LocationService
+import com.bobon.mypace.device.location.serviceLocation.LocationService
 
 class AndroidTrainingServiceController(
     private val context: Context

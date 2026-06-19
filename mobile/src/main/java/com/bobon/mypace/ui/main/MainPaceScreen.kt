@@ -25,7 +25,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.bobon.mypace.domain.model.WorkoutState
-import com.bobon.mypace.ui.TrainingViewModel
+import com.bobon.mypace.ui.training.TrainingViewModel
 import com.bobon.mypace.ui.history.HistoryScreen
 import com.bobon.mypace.ui.settings.SettingsScreen
 import com.bobon.mypace.ui.training.TrainingScreenRoute
@@ -49,16 +49,18 @@ private val bottomItems = listOf(Screen.Training, Screen.History, Screen.Setting
 
 @Composable
 fun PaceScreenRoute(
-    viewModel: TrainingViewModel = koinViewModel()
+    viewModel: MainViewModel = koinViewModel()
 ) {
     val workoutState by viewModel.workoutState.collectAsState()
-    PaceScreen(workoutState = workoutState, onPermissionGrantedStart = viewModel::startTracking)
+
+    PaceScreen(
+        workoutState = workoutState
+    )
 }
 
 @Composable
 fun PaceScreen(
-    workoutState: WorkoutState,
-    onPermissionGrantedStart: () -> Unit
+    workoutState: WorkoutState
 ) {
     if (workoutState == WorkoutState.IDLE) {
         PaceAppShellRoute()
@@ -69,7 +71,7 @@ fun PaceScreen(
 
 @Composable
 fun PaceAppShellRoute(
-    viewModel: TrainingViewModel = koinViewModel()
+    viewModel: MainViewModel = koinViewModel()
 ) {
     PaceAppShell(onScreenChanged = viewModel::logScreenChanged)
 }
@@ -159,7 +161,6 @@ fun AppNavHost(
 @Composable
 private fun PaceScreenPreview() {
     PaceScreen(
-        workoutState = WorkoutState.IDLE,
-        onPermissionGrantedStart = {}
+        workoutState = WorkoutState.IDLE
     )
 }
