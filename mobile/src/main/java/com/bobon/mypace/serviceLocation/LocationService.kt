@@ -12,7 +12,8 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import com.bobon.mypace.LocationNotificationHelper
-import com.bobon.mypace.data.manager.TrainingManager
+import com.bobon.mypace.device.location.toGpsPoint
+import com.bobon.mypace.domain.training.TrainingManager
 import com.bobon.mypace.logger.AppEventData
 import com.bobon.mypace.logger.EventsLog
 import com.bobon.mypace.logger.GPSLog
@@ -175,7 +176,7 @@ class LocationService : Service() {
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
         locationProvider.startUpdates { location ->
-            val paceUpdate = trainingManager.updatePace(location)
+            val paceUpdate = trainingManager.updatePace(location.toGpsPoint())
             
             // Получаем отформатированный темп из менеджера, так как он его уже посчитал и обновил StateFlow
             val formattedPace = trainingManager.currentPace.value

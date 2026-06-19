@@ -19,54 +19,34 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bobon.mypace.domain.model.Workout
-import com.bobon.mypace.ui.TrainingViewModel
+import com.bobon.mypace.ui.history.HistoryViewModel
+import com.bobon.mypace.ui.model.WorkoutHistoryItem
 import com.bobon.mypace.utils.PaceFormatter
 import org.koin.androidx.compose.koinViewModel
 import androidx.compose.ui.tooling.preview.Preview
 
+import com.bobon.mypace.domain.model.TotalStats
+
 /**
  * Модель данных для истории тренировок
  */
-data class WorkoutHistoryItem(
-    val id: String,
-    val date: String,
-    val distance: String,
-    val duration: String,
-    val pace: String,
-    val isRunning: Boolean
-)
 
-// Extension-функция для маппинга доменной модели в модель UI
-@SuppressLint("DefaultLocale")
-fun Workout.toUiModel(): WorkoutHistoryItem {
-    return WorkoutHistoryItem(
-        id = this.id,
-        date = PaceFormatter.formatDate(this.startTime),
-        distance = String.format("%.2f км", this.totalDistance / 1000.0),
-        duration = PaceFormatter.formatDuration(this.startTime, this.endTime),
-        pace = PaceFormatter.calculateAndFormatPace(this.startTime, this.endTime, this.totalDistance),
-        isRunning = this.activityType == 1 // 1 - Бег, 2 - Ходьба
-    )
-}
+
+
 
 @Composable
-fun HistoryScreen(viewModel: TrainingViewModel = koinViewModel()) {
+fun HistoryScreen(viewModel: HistoryViewModel = koinViewModel()) {
     var selectedWorkout by remember { mutableStateOf<WorkoutHistoryItem?>(null) }
 
     // Подписываемся на данные из ViewModel (теперь это List<Workout>)
-    val workoutsList by viewModel.workouts.collectAsState()
+    val historyList by viewModel.historyList.collectAsState()
     val totalStats by viewModel.totalStats.collectAsState()
     val selectedFilterIndex by viewModel.selectedFilter.collectAsState()
-
-    // Маппим полученные сущности в UI модели
-    val historyList = remember(workoutsList) {
-        workoutsList.map { it.toUiModel() }
-    }
 
     if (selectedWorkout == null) {
         HistoryListContent(
             historyList = historyList,
-            totalStats = totalStats,
+            totalStats = totalStats ,
             selectedFilterIndex = selectedFilterIndex,
             onFilterSelect = { viewModel.selectFilter(it) },
             onWorkoutClick = { selectedWorkout = it },
@@ -83,7 +63,7 @@ fun HistoryScreen(viewModel: TrainingViewModel = koinViewModel()) {
 @Composable
 fun HistoryListContent(
     historyList: List<WorkoutHistoryItem>,
-    totalStats: TrainingViewModel.TotalStats,
+    totalStats: TotalStats,
     selectedFilterIndex: Int,
     onFilterSelect: (Int) -> Unit,
     onWorkoutClick: (WorkoutHistoryItem) -> Unit,
@@ -142,7 +122,7 @@ fun HistoryListContent(
 
 @SuppressLint("DefaultLocale")
 @Composable
-fun TotalStatsHeader(totalStats: TrainingViewModel.TotalStats) {
+fun TotalStatsHeader(totalStats: TotalStats){
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -287,7 +267,7 @@ fun HistoryListContentPreview() {
                     isRunning = true
                 )
             ),
-            totalStats = TrainingViewModel.TotalStats(
+            totalStats = TotalStats(
                 distanceKm = 18.34,
                 workoutCount = 3,
                 totalHours = 2.01

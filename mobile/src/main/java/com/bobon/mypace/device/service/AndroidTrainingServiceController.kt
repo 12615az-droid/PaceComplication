@@ -1,26 +1,29 @@
-package com.bobon.mypace.data.manager
+package com.bobon.mypace.device.service
 
 import android.content.Context
 import android.content.Intent
+import com.bobon.mypace.domain.service.TrainingServiceController
 import com.bobon.mypace.serviceLocation.LocationService
 
-class ServiceManager(private val context: Context) {
+class AndroidTrainingServiceController(
+    private val context: Context
+) : TrainingServiceController {
 
-    fun startService() {
+    override fun startTrackingService() {
         val intent = Intent(context, LocationService::class.java).apply {
             action = "START"
         }
         context.startForegroundService(intent)
     }
 
-    fun stopService() {
+    override fun stopTrackingService() {
         val intent = Intent(context, LocationService::class.java).apply {
             action = "STOP"
         }
         context.startForegroundService(intent)
     }
 
-    fun killService() {
+    override fun killTrackingService() {
         val intent = Intent(context, LocationService::class.java).apply {
             action = "KILL"
         }

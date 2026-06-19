@@ -1,52 +1,18 @@
-package com.bobon.mypace.permission
+package com.bobon.mypace.device.permission
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import android.Manifest
-import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
-
-interface PermissionManager {
-    fun getRequiredPermissions(): Array<String>
-    fun getCriticalPermissions(): Array<String>
-    fun getOptionalPermissions(): Array<String>
-
-    fun hasAllPermissions(): Boolean
-    fun hasAnyLocation(): Boolean      // ← COARSE или FINE
-    fun hasFineLocation(): Boolean     // ← именно FINE
-    fun hasOnlyCoarseLocation(): Boolean // ← COARSE есть, FINE нет
-    fun hasNotifications(): Boolean
-    fun isLocationEnabled(): Boolean
-
-    fun shouldShowRationale(activity: Activity): Boolean
-    fun shouldShowFineLocationRationale(activity: Activity): Boolean
-    fun shouldGoToSettings(): Boolean
-    fun shouldExplainBeforeRequest(activity: Activity): Boolean
-
-    fun markRationaleShown()
-    fun incrementDenyCount()
-    fun openAppSettings()
-    fun openLocationSettings()
-    fun getPermissionRationaleText(): String
-    fun getLocationDisabledText(): String
-    fun getPermissionsBlockedText(): String
-    fun getPreciseLocationRequiredText(): String  // ← новый текст
-    fun resetState()
-}
-sealed class PermissionResult {
-    object RequestPermissions : PermissionResult() // ← новый
-    object AllGranted : PermissionResult()
-    object RationaleRequired : PermissionResult()
-    object DeniedPermanently : PermissionResult()
-    object LocationDisabled : PermissionResult()
-}
+import com.bobon.mypace.device.permission.PermissionManager
 
 class AndroidPermissionManager(private val context: Context) : PermissionManager {
 

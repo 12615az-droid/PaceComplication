@@ -1,7 +1,8 @@
-package com.bobon.mypace.data.manager
+package com.bobon.mypace.domain.training
 
 import android.location.Location
 import com.bobon.mypace.WearDataSender
+
 import com.bobon.mypace.domain.model.WorkoutState
 import com.bobon.mypace.modes.RunningMode
 import com.bobon.mypace.modes.TrainingMode
@@ -12,14 +13,16 @@ import com.bobon.mypace.timer.PaceTimer
 import com.bobon.mypace.utils.PaceFormatter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-
+import com.bobon.mypace.domain.distance.DistanceCalculator
+import com.bobon.mypace.domain.model.GpsPoint
 /**
  * Менеджер активной тренировки. Хранит состояние в памяти.
  */
 class TrainingManager(
     private val paceTimer: PaceTimer,
     private val paceCalculator: PaceCalculator,
-    private val wearDataSender: WearDataSender
+    private val trainingSyncSender: TrainingSyncSender,
+    private val distanceCalculator: DistanceCalculator
 ) {
     private val _currentPace = MutableStateFlow("0:00")
     val currentPace = _currentPace.asStateFlow()
@@ -42,8 +45,7 @@ class TrainingManager(
     private val _startTime = MutableStateFlow<Long?>(null)
     val startTime = _startTime.asStateFlow()
 
-    private var oldLat = 0.0
-    private var oldLon = 0.0
+    private var lastGpsPoint: GpsPoint? = null
 
     val trainingTimeMs = paceTimer.trainingTimeMs
 
@@ -56,13 +58,13 @@ class TrainingManager(
         }
         _workoutState.value = WorkoutState.ACTIVE
         paceTimer.start()
-        syncWithWear()
+        syncTrainingState()
     }
 
     fun pause() {
         _workoutState.value = WorkoutState.PAUSED
         paceTimer.stop()
-        syncWithWear()
+        syncTrainingState()
     }
 
     fun reset() {
@@ -70,43 +72,42 @@ class TrainingManager(
         _currentSessionId.value = null
         _startTime.value = null
         _totalDistance.value = 0.0
-        oldLat = 0.0
-        oldLon = 0.0
+        lastGpsPoint=null
         _currentPace.value = "0:00"
         _currentGPSAccuracy.value = 0f
         paceTimer.reset()
         paceCalculator.reset()
-        syncWithWear()
+        syncTrainingState()
     }
 
-    fun updatePace(location: Location): PaceUpdate? {
-        if (_workoutState.value != WorkoutState.ACTIVE) return null
+    fun updatePace(point: GpsPoint): PaceUpdate? {
+        _currentGPSAccuracy.value = point.accuracyMeters
 
-        _currentGPSAccuracy.value = location.accuracy
         val paceUpdate = paceCalculator.calculate(
-            speedMetersPerSec = location.speed,
-            accuracy = location.accuracy,
+            speedMetersPerSec = point.speedMetersPerSecond,
+            accuracy = point.accuracyMeters,
             maxSpeedMetersPerSec = _activityMode.value.maxSpeedMetersPerSec,
             alphaProvider = _activityMode.value::alphaForAccuracy
         ) ?: return null
 
-        // Форматирование теперь происходит здесь (или во ViewModel), 
-        // отделяя расчеты от представления.
-        _currentPace.value = PaceFormatter.formatPace(paceUpdate.secondsPerKm)
-
-        updateDistance(location.latitude, location.longitude)
-        syncWithWear()
+        updateDistance(point)
+        syncTrainingState()
         return paceUpdate
     }
 
-    private fun updateDistance(lat: Double, lon: Double) {
-        if (oldLat != 0.0 && oldLon != 0.0) {
-            val results = FloatArray(1)
-            Location.distanceBetween(oldLat, oldLon, lat, lon, results)
-            _totalDistance.value += results[0]
+    private fun updateDistance(point: GpsPoint) {
+        val previousPoint = lastGpsPoint
+
+        if (previousPoint != null) {
+            val deltaMeters = distanceCalculator.distanceBetween(
+                from = previousPoint,
+                to = point
+            )
+
+            _totalDistance.value += deltaMeters
         }
-        oldLat = lat
-        oldLon = lon
+
+        lastGpsPoint = point
     }
 
     fun changeMode() {
@@ -116,7 +117,10 @@ class TrainingManager(
         }
     }
 
-    fun syncWithWear() {
-        wearDataSender.sendWorkoutUpdate(_currentPace.value, _workoutState.value.intState)
+    private fun syncTrainingState() {
+        trainingSyncSender.sendWorkoutUpdate(
+            paceText = _currentPace.value,
+            workoutState = _workoutState.value.intState
+        )
     }
 }

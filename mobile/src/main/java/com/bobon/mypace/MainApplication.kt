@@ -1,7 +1,7 @@
 package com.bobon.mypace
 
 import android.app.Application
-import com.bobon.mypace.di.appModule
+import com.bobon.mypace.di.appModules
 import com.bobon.mypace.logger.AppEventData
 import com.bobon.mypace.logger.EventsLog
 import com.bobon.mypace.logger.LogFilesManager
@@ -27,7 +27,7 @@ class MainApplication : Application() {
             // Передаём контекст приложения, чтобы репозитории могли им пользоваться
             androidContext(this@MainApplication)
 
-            modules(appModule)
+            modules(appModules)
         }
         val logs = getKoin().get<LogFilesManager>()
         logs.ensureDirs()

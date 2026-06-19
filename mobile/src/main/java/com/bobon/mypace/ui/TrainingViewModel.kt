@@ -1,31 +1,57 @@
 package com.bobon.mypace.ui
 
 import android.app.Activity
-import androidx.lifecycle.ViewModel
+
 import androidx.lifecycle.viewModelScope
-import com.bobon.mypace.data.manager.ServiceManager
-import com.bobon.mypace.data.manager.TrainingManager
-import com.bobon.mypace.data.repository.WorkoutRepository
+import com.bobon.mypace.domain.training.TrainingManager
 import com.bobon.mypace.domain.model.Workout
 import com.bobon.mypace.history.SessionIdGenerator
 import com.bobon.mypace.logger.AppEventData
-import com.bobon.mypace.logger.EventsLog
+
 import com.bobon.mypace.logger.SourceEvent
 import com.bobon.mypace.logger.TypeEvent
-import com.bobon.mypace.permission.PermissionManager
-import com.bobon.mypace.permission.PermissionResult
+
+
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import com.bobon.mypace.device.permission.PermissionManager
+import com.bobon.mypace.domain.permission.PermissionResult
 
+import androidx.lifecycle.ViewModel
+
+import com.bobon.mypace.domain.repository.WorkoutRepository
+import com.bobon.mypace.logger.EventsLog
+
+import com.bobon.mypace.domain.service.TrainingServiceController
+import com.bobon.mypace.domain.usecase.training.ChangeTrainingModeUseCase
+import com.bobon.mypace.domain.usecase.training.FinishTrainingUseCase
+import com.bobon.mypace.domain.usecase.training.PauseTrainingUseCase
+import com.bobon.mypace.domain.usecase.training.StartTrainingUseCase
+import com.bobon.mypace.domain.usecase.workout.DeleteWorkoutUseCase
+import com.bobon.mypace.domain.usecase.workout.ObserveTotalStatsUseCase
+import com.bobon.mypace.domain.usecase.workout.ObserveWorkoutStatsUseCase
+import com.bobon.mypace.domain.usecase.workout.ObserveWorkoutsByTypeUseCase
+import com.bobon.mypace.domain.usecase.workout.ObserveWorkoutsUseCase
+import com.bobon.mypace.domain.usecase.workout.SaveWorkoutUseCase
+import com.bobon.mypace.domain.model.TotalStats
 
 class TrainingViewModel(
     private val trainingManager: TrainingManager,
-    private val workoutRepository: WorkoutRepository,
-    private val serviceManager: ServiceManager,
+    private val trainingServiceController: TrainingServiceController,
     private val eventsLog: EventsLog,
-    private val permissionManager: PermissionManager
-) : ViewModel() {
+    private val permissionManager: PermissionManager,
+    private val startTraining: StartTrainingUseCase,
+    private val pauseTraining: PauseTrainingUseCase,
+    private val finishTraining: FinishTrainingUseCase,
+    private val changeTrainingMode: ChangeTrainingModeUseCase,
+    private val observeWorkouts: ObserveWorkoutsUseCase,
+    private val observeWorkoutsByType: ObserveWorkoutsByTypeUseCase,
+    private val observeWorkoutStats: ObserveWorkoutStatsUseCase,
+    private val saveWorkout: SaveWorkoutUseCase,
+    private val observeTotalStats: ObserveTotalStatsUseCase,
+    private val deleteWorkout: DeleteWorkoutUseCase
+) : ViewModel(){
 
     val currentPace = trainingManager.currentPace
     val currentGPSAccuracy = trainingManager.currentGPSAccuracy
@@ -220,60 +246,26 @@ class TrainingViewModel(
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val workouts: StateFlow<List<Workout>> = _selectedFilter
-        .flatMapLatest { filter ->
-            when (filter) {
-                1 -> workoutRepository.getByType(1) // Бег
-                2 -> workoutRepository.getByType(2) // Ходьба
-                else -> workoutRepository.allWorkouts
-            }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
 
-    val totalStats = combine(
-        workoutRepository.totalDistanceDB,
-        workoutRepository.workoutCount,
-        workoutRepository.totalTimeMs
-    ) { distance, count, timeMs ->
-        TotalStats(
-            distanceKm = distance / 1000.0,
-            workoutCount = count,
-            totalHours = timeMs / (1000.0 * 60 * 60)
-        )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = TotalStats(0.0, 0, 0.0)
-    )
 
     fun selectFilter(index: Int) {
         _selectedFilter.value = index
     }
 
-    data class TotalStats(
-        val distanceKm: Double,
-        val workoutCount: Int,
-        val totalHours: Double
-    )
+
 
     fun startTracking() {
 
         viewModelScope.launch {
             val sessionId = SessionIdGenerator.newId()
-            trainingManager.start(sessionId)
-            serviceManager.startService()
+            startTraining(sessionId)
+
         }
     }
 
     fun stopTracking() {
         viewModelScope.launch {
-            trainingManager.pause()
-            serviceManager.stopService()
+            pauseTraining()
         }
     }
 
@@ -299,20 +291,17 @@ class TrainingViewModel(
                 note = null
             )
 
-            workoutRepository.insertWorkout(workout)
-            serviceManager.killService()
-            trainingManager.reset()
+            saveWorkout(workout)
+
+
+            finishTraining()
         }
     }
 
-    fun deleteTrack(id: String) {
-        viewModelScope.launch {
-            workoutRepository.deleteWorkout(id)
-        }
-    }
+
 
     fun changeMode() {
-        trainingManager.changeMode()
+        changeTrainingMode()
     }
 
     fun openGoalSetupDialog() {
