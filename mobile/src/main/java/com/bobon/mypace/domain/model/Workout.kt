@@ -1,3 +1,4 @@
+
 package com.bobon.mypace.domain.model
 
 data class Workout(

@@ -8,7 +8,6 @@ import com.bobon.mypace.LocationNotificationHelper
 import com.bobon.mypace.WearDataSender
 import com.bobon.mypace.data.manager.ServiceManager
 import com.bobon.mypace.data.manager.TrainingManager
-import com.bobon.mypace.data.repository.WorkoutRepository
 import com.bobon.mypace.database.AppDatabase
 import com.bobon.mypace.logger.EventsLog
 import com.bobon.mypace.logger.GPSLog
@@ -24,7 +23,8 @@ import com.bobon.mypace.ui.TrainingViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
-
+import com.bobon.mypace.data.repository.RoomWorkoutRepository
+import com.bobon.mypace.domain.repository.WorkoutRepository
 val appModule = module {
     single { PaceTimer() }
     single { PaceCalculator(stopThreshold = 0.5f, accBadThreshold = 35f) }
@@ -45,7 +45,9 @@ val appModule = module {
     single { get<AppDatabase>().workoutDao() }
 
     // Repositories & Managers
-    single { WorkoutRepository(get()) }
+    single<WorkoutRepository> {
+        RoomWorkoutRepository(get())
+    }
     single { TrainingManager(get(), get(), get()) }
     single { ServiceManager(androidContext()) }
 
