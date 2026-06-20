@@ -21,6 +21,8 @@ import com.bobon.mypace.domain.service.TrainingServiceController
 import com.bobon.mypace.device.permission.AndroidPermissionManager
 import com.bobon.mypace.device.permission.PermissionManager
 import com.bobon.mypace.device.sensor.SensorTracker
+import com.bobon.mypace.device.timer.AndroidClockProvider
+import com.bobon.mypace.domain.timer.ClockProvider
 
 val deviceModule = module {
 
@@ -69,6 +71,9 @@ val deviceModule = module {
 
     single {
         DeveloperSettings()
+    }
+    single<ClockProvider> {
+        AndroidClockProvider()
     }
 
     single {

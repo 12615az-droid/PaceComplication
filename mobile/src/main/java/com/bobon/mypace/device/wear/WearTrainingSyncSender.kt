@@ -1,6 +1,6 @@
 package com.bobon.mypace.device.wear
 
-import com.bobon.mypace.device.wear.WearDataSender
+import com.bobon.mypace.domain.model.WorkoutState
 import com.bobon.mypace.domain.training.TrainingSyncSender
 
 class WearTrainingSyncSender(
@@ -9,8 +9,11 @@ class WearTrainingSyncSender(
 
     override fun sendWorkoutUpdate(
         paceText: String,
-        workoutState: Int
+        workoutState: WorkoutState
     ) {
-        wearDataSender.sendWorkoutUpdate(paceText, workoutState)
+        wearDataSender.sendWorkoutUpdate(
+            paceString = paceText,
+            workoutState = workoutState.toWearState()
+        )
     }
 }

@@ -2,7 +2,7 @@
 package com.bobon.mypace.data.repository
 
 
-import com.bobon.mypace.database.WorkoutDao
+import com.bobon.mypace.data.database.WorkoutDao
 import com.bobon.mypace.domain.model.Workout
 import com.bobon.mypace.domain.repository.WorkoutRepository
 import kotlinx.coroutines.flow.Flow

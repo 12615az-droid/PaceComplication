@@ -1,6 +1,6 @@
 package com.bobon.mypace.domain.timer
 
-import android.os.SystemClock
+
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -21,7 +21,9 @@ import kotlinx.coroutines.launch
  * - Использовать существующий WorkoutTimer для преобразования секунд в строку.
  * - Предоставлять наружу StateFlow с уже отформатированным временем.
  */
-class PaceTimer {
+class PaceTimer(
+    private val clockProvider: ClockProvider
+) {
 
     private val _trainingTimeMs = MutableStateFlow(0L)
     val trainingTimeMs = _trainingTimeMs.asStateFlow()
@@ -37,7 +39,7 @@ class PaceTimer {
      */
     fun start() {
         if (timerJob?.isActive == true) return
-        timer.startTimer(SystemClock.elapsedRealtime())
+        timer.startTimer(clockProvider.elapsedRealtimeMillis())
         publishNow()
         timerJob = scope.launch {
             while (isActive) {
@@ -52,7 +54,7 @@ class PaceTimer {
      * Останавливает таймер, отменяя корутину.
      */
     fun stop() {
-        val now = SystemClock.elapsedRealtime()
+        val now =clockProvider.elapsedRealtimeMillis()
         timer.onStop(now)
         publish(now)
         timerJob?.cancel()
@@ -75,7 +77,7 @@ class PaceTimer {
         scope.cancel()
     }
 
-    private fun publishNow() = publish(SystemClock.elapsedRealtime())
+    private fun publishNow() = publish(clockProvider.elapsedRealtimeMillis())
 
     private fun publish(nowMs: Long) {
         val ms = timer.currentMs(nowMs)

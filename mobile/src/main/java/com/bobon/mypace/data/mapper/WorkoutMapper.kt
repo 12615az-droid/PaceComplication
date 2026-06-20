@@ -1,6 +1,6 @@
 package com.bobon.mypace.data.mapper
 
-import com.bobon.mypace.database.WorkoutEntity
+import com.bobon.mypace.data.database.WorkoutEntity
 import com.bobon.mypace.domain.model.Workout
 
 fun WorkoutEntity.toDomain(): Workout = Workout(

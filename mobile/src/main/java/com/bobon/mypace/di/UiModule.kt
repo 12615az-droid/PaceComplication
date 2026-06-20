@@ -1,29 +1,29 @@
 package com.bobon.mypace.di
 
 import com.bobon.mypace.ui.training.TrainingViewModel
-import org.koin.androidx.viewmodel.dsl.viewModel
-import org.koin.dsl.module
 import com.bobon.mypace.ui.history.HistoryViewModel
 import com.bobon.mypace.ui.main.MainViewModel
 import com.bobon.mypace.ui.trainingSetup.TrainingSetupViewModel
+import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.dsl.module
 
 val uiModule = module {
-
     viewModel {
         TrainingViewModel(
             observeTrainingState = get(),
             continueTraining = get(),
             pauseTraining = get(),
-            saveCurrentTraining = get(),
+            saveCurrentTraining = get()
         )
-
     }
+
     viewModel {
         MainViewModel(
             trainingManager = get(),
             logScreenChangedUseCase = get()
         )
     }
+
     viewModel {
         TrainingSetupViewModel(
             trainingManager = get(),
@@ -33,6 +33,7 @@ val uiModule = module {
             startTraining = get()
         )
     }
+
     viewModel {
         HistoryViewModel(
             observeWorkouts = get(),

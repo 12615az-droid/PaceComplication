@@ -193,7 +193,7 @@ class LocationService : Service() {
                 )
             }
 
-            updateNotification(formattedPace, location.accuracy)
+            updateNotification(formattedPace.toString(), location.accuracy)
         }
     }
 

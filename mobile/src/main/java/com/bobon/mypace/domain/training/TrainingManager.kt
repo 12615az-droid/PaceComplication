@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import com.bobon.mypace.domain.distance.DistanceCalculator
 import com.bobon.mypace.domain.model.GpsPoint
+import com.bobon.mypace.core.formatter.PaceFormatter
+
 /**
  * Менеджер активной тренировки. Хранит состояние в памяти.
  */
@@ -86,6 +88,9 @@ class TrainingManager(
             alphaProvider = _activityMode.value::alphaForAccuracy
         ) ?: return null
 
+        // ОБНОВЛЕНИЕ: записываем отформатированный темп в StateFlow для UI
+        _currentPace.value = PaceFormatter.formatPace(paceUpdate.secondsPerKm)
+
         updateDistance(point)
         syncTrainingState()
         return paceUpdate
@@ -116,7 +121,7 @@ class TrainingManager(
     private fun syncTrainingState() {
         trainingSyncSender.sendWorkoutUpdate(
             paceText = _currentPace.value,
-            workoutState = _workoutState.value.intState
+            workoutState = _workoutState.value
         )
     }
 }

@@ -21,7 +21,11 @@ import com.bobon.mypace.domain.usecase.workout.ObserveWorkoutsByTypeUseCase
 import com.bobon.mypace.domain.usecase.workout.ObserveWorkoutsUseCase
 import com.bobon.mypace.domain.usecase.workout.SaveWorkoutUseCase
 val domainModule = module {
-    single { PaceTimer() }
+    single {
+        PaceTimer(
+            clockProvider = get()
+        )
+    }
 
     single {
         PaceCalculator(

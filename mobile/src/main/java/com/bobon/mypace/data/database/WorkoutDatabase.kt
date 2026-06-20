@@ -1,4 +1,4 @@
-package com.bobon.mypace.database
+package com.bobon.mypace.data.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
