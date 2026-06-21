@@ -19,19 +19,25 @@ val uiModule = module {
 
     viewModel {
         MainViewModel(
-            trainingManager = get(),
+            observeWorkoutState = get(),
             logScreenChangedUseCase = get()
         )
     }
 
     viewModel {
         TrainingSetupViewModel(
-            trainingManager = get(),
+            observeActivityMode = get(),
             changeTrainingMode = get(),
-            permissionManager = get(),
             checkStartWorkoutAvailability = get(),
-            startTraining = get()
+            startTraining = get(),
+            handlePermissionResult = get(),
+            getRequiredPermissionsUseCase = get(),
+            markPermissionRationaleShown = get(),
+            shouldGoToSettings = get(),
+            isLocationEnabled = get()
         )
+
+
     }
 
     viewModel {

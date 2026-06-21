@@ -2,16 +2,16 @@ package com.bobon.mypace.ui.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bobon.mypace.domain.training.TrainingManager
 import com.bobon.mypace.domain.usecase.logging.LogScreenChangedUseCase
+import com.bobon.mypace.domain.usecase.training.ObserveWorkoutStateUseCase
 import kotlinx.coroutines.launch
 
 class MainViewModel(
-    trainingManager: TrainingManager,
+    observeWorkoutState: ObserveWorkoutStateUseCase,
     private val logScreenChangedUseCase: LogScreenChangedUseCase
 ) : ViewModel() {
 
-    val workoutState = trainingManager.workoutState
+    val workoutState = observeWorkoutState()
 
     fun logScreenChanged(screenName: String) {
         viewModelScope.launch {

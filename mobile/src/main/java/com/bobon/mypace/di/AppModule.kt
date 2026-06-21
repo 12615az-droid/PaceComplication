@@ -1,8 +1,16 @@
 package com.bobon.mypace.di
 
+
 val appModules = listOf(
     dataModule,
     domainModule,
-    deviceModule,
+
+    deviceTrackingModule,
+    devicePermissionModule,
+    deviceSensorModule,
+    deviceTimerModule,
+    deviceWearModule,
+    deviceLoggingModule,
+
     uiModule
 )

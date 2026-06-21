@@ -1,7 +1,10 @@
 package com.bobon.mypace.ui.trainingSetup
 
+import android.Manifest
 
-import android.app.Activity
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings as AndroidSettings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -16,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.bobon.mypace.domain.training.modes.WalkingMode
@@ -29,165 +33,188 @@ fun TrainingSetupScreenRoute(
     viewModel: TrainingSetupViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
-    val activity = context as Activity
+    val activity = context.findActivity()
 
     val mode by viewModel.activityMode.collectAsState()
-    val isGoalSetupOpen by viewModel.isGoalSetupOpen.collectAsState()
+    val activeDialog by viewModel.activeDialog.collectAsState()
 
-    // Диалоги
-    val showRationale by viewModel.showRationaleDialog.collectAsState()
-    val showSettings by viewModel.showSettingsDialog.collectAsState()
-    val showLocationServices by viewModel.showLocationServicesDialog.collectAsState()
-    val showRetry by viewModel.showRetryDialog.collectAsState()
-    val showPreciseLocation by viewModel.showPreciseLocationDialog.collectAsState()
-
-
-    // Снэкбар
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Лаунчер
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { results ->
-        viewModel.onPermissionResult(activity, results)
+    ) {
+        val shouldShowFineLocationRationale = activity?.let {
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                it,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
+        } ?: false
+
+        viewModel.onPermissionResult(
+            shouldShowFineLocationRationale = shouldShowFineLocationRationale
+        )
     }
 
-    // Слушаем снэкбар сообщения
     LaunchedEffect(Unit) {
         viewModel.snackbarMessage.collect { message ->
             snackbarHostState.showSnackbar(message)
         }
     }
 
-    val launchPermissionRequest by viewModel.launchPermissionRequest.collectAsState()
-
-    LaunchedEffect(launchPermissionRequest) {
-        if (launchPermissionRequest) {
-            permissionLauncher.launch(viewModel.getRequiredPermissions())
-            viewModel.onPermissionRequestLaunched()
-        }
-    }
-
-    // При возврате из настроек
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        viewModel.dismissDialogs()
-    }
-    Box(modifier = Modifier.fillMaxSize()) {
-        // === ДИАЛОГИ ===
-
-        // Rationale (перед первым запросом)
-        if (showRationale) {
-            AlertDialog(
-                onDismissRequest = { viewModel.onDismissRationaleDialog() },
-                title = { Text("Требуются разрешения") },
-                text = { Text(viewModel.getPermissionRationaleText()) },
-                confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.onRationaleConfirm()
-                        permissionLauncher.launch(viewModel.getRequiredPermissions())
-                    }) {
-                        Text("Понятно, продолжить")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { viewModel.onDismissRationaleDialog() }) {
-                        Text("Позже")
-                    }
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                TrainingSetupEffect.RequestLocationPermission -> {
+                    permissionLauncher.launch(viewModel.getRequiredPermissions())
                 }
-            )
-        }
-        if (showLocationServices) {
-            AlertDialog(
-                onDismissRequest = { viewModel.onDismissLocationDialog() },
-                title = { Text("Геолокация выключена") },
-                text = { Text(viewModel.getLocationDisabledText()) },
-                confirmButton = {
-                    TextButton(onClick = { viewModel.onOpenLocationSettings() }) {
-                        Text("Включить GPS")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { viewModel.onDismissLocationDialog() }) {
-                        Text("Позже")
-                    }
-                }
-            )
-        }
 
-// Разрешения заблокированы
-        if (showSettings) {
-            AlertDialog(
-                onDismissRequest = { viewModel.onDismissSettingsDialog() },
-                title = { Text("Разрешения заблокированы") },
-                text = { Text(viewModel.getPermissionsBlockedText()) },
-                confirmButton = {
-                    TextButton(onClick = { viewModel.onOpenSettings() }) {
-                        Text("Открыть настройки")
+                TrainingSetupEffect.OpenAppSettings -> {
+                    val intent = Intent(AndroidSettings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts(
+                            "package",
+                            context.packageName,
+                            null
+                        )
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = { viewModel.onDismissSettingsDialog() }) {
-                        Text("Позже")
-                    }
+                    context.startActivity(intent)
                 }
-            )
-        }
-        if (showPreciseLocation) {
-            AlertDialog(
-                onDismissRequest = { viewModel.onDismissPreciseLocationDialog() },
-                title = { Text("Нужна точная геолокация") },
-                text = { Text(viewModel.getPreciseLocationRequiredText()) },
-                confirmButton = {
-                    TextButton(onClick = { viewModel.onOpenAppSettingsForPrecise() }) {
-                        Text("В настройки")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { viewModel.onDismissPreciseLocationDialog() }) {
-                        Text("Позже")
-                    }
-                }
-            )
-        }
 
-        // Retry (после отказа, можно ещё раз объяснить)
-        if (showRetry) {
-            AlertDialog(
-                onDismissRequest = { viewModel.onDismissRetryDialog() },
-                title = { Text("Разрешение необходимо") },
-                text = {
-                    Text(
-                        "Без точной геолокации приложение не может работать.\n\n" +
-                                "Пожалуйста, предоставьте доступ."
+                TrainingSetupEffect.OpenLocationSettings -> {
+                    context.startActivity(
+                        Intent(AndroidSettings.ACTION_LOCATION_SOURCE_SETTINGS)
                     )
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.onRetryRequest()
-                        permissionLauncher.launch(viewModel.getRequiredPermissions())
-                    }) {
-                        Text("Предоставить")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { viewModel.onOpenSettings() }) {
-                        Text("В настройки")
-                    }
                 }
-            )
+            }
+        }
+    }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.dismissDialog()
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (activeDialog) {
+            TrainingSetupDialog.PermissionRationale -> {
+                AlertDialog(
+                    onDismissRequest = { viewModel.dismissDialog() },
+                    title = { Text("Требуются разрешения") },
+                    text = { Text(TrainingSetupTexts.permissionRationaleText) },
+                    confirmButton = {
+                        TextButton(onClick = { viewModel.onRationaleConfirm() }) {
+                            Text("Понятно, продолжить")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { viewModel.dismissDialog() }) {
+                            Text("Позже")
+                        }
+                    }
+                )
+            }
+
+            TrainingSetupDialog.LocationDisabled -> {
+                AlertDialog(
+                    onDismissRequest = { viewModel.dismissDialog() },
+                    title = { Text("Геолокация выключена") },
+                    text = { Text(TrainingSetupTexts.locationDisabledText) },
+                    confirmButton = {
+                        TextButton(onClick = { viewModel.onOpenLocationSettings() }) {
+                            Text("Включить GPS")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { viewModel.dismissDialog() }) {
+                            Text("Позже")
+                        }
+                    }
+                )
+            }
+
+            TrainingSetupDialog.PermissionSettings -> {
+                AlertDialog(
+                    onDismissRequest = { viewModel.dismissDialog() },
+                    title = { Text("Разрешения заблокированы") },
+                    text = { Text(TrainingSetupTexts.permissionsBlockedText) },
+                    confirmButton = {
+                        TextButton(onClick = { viewModel.onOpenSettings() }) {
+                            Text("Открыть настройки")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { viewModel.dismissDialog() }) {
+                            Text("Позже")
+                        }
+                    }
+                )
+            }
+
+            TrainingSetupDialog.PreciseLocationRequired -> {
+                AlertDialog(
+                    onDismissRequest = { viewModel.dismissDialog() },
+                    title = { Text("Нужна точная геолокация") },
+                    text = { Text(TrainingSetupTexts.preciseLocationRequiredText) },
+                    confirmButton = {
+                        TextButton(onClick = { viewModel.onOpenAppSettingsForPrecise() }) {
+                            Text("В настройки")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { viewModel.dismissDialog() }) {
+                            Text("Позже")
+                        }
+                    }
+                )
+            }
+
+            TrainingSetupDialog.PermissionRetry -> {
+                AlertDialog(
+                    onDismissRequest = { viewModel.dismissDialog() },
+                    title = { Text("Разрешение необходимо") },
+                    text = {
+                        Text(
+                            "Без точной геолокации приложение не может работать.\n\n" +
+                                    "Пожалуйста, предоставьте доступ."
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            viewModel.dismissDialog()
+                            permissionLauncher.launch(viewModel.getRequiredPermissions())
+                        }) {
+                            Text("Предоставить")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { viewModel.onOpenSettings() }) {
+                            Text("В настройки")
+                        }
+                    }
+                )
+            }
+
+            TrainingSetupDialog.GoalSetup,
+            null -> Unit
         }
 
-
-
-        // === UI ===
         TrainingSetupScreen(
             modifier = modifier,
             isWalking = mode == WalkingMode,
-            isGoalSetupOpen = isGoalSetupOpen,
-            onCloseGoalSetup = viewModel::closeGoalSetupDialog,
+            isGoalSetupOpen = activeDialog == TrainingSetupDialog.GoalSetup,
+            onCloseGoalSetup = viewModel::dismissDialog,
             onModeToggle = viewModel::changeMode,
             onOpenGoalSetup = viewModel::openGoalSetupDialog,
-            onStartClick = { viewModel.onStartClick(activity) }
+            onStartClick = {
+                val shouldShowRationale = activity?.let { currentActivity ->
+                    viewModel.getRequiredPermissions().any { permission ->
+                        ActivityCompat.shouldShowRequestPermissionRationale(
+                            currentActivity,
+                            permission
+                        )
+                    }
+                } ?: false
+
+                viewModel.onStartClick(shouldShowRationale)
+            }
         )
     }
 }
@@ -452,6 +479,9 @@ private fun StartWorkoutButton(
         )
     }
 }
+
+
+
 
 
 @Preview(showBackground = true)

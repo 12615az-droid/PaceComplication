@@ -12,7 +12,8 @@ import android.provider.Settings
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
-import com.bobon.mypace.device.permission.PermissionManager
+import com.bobon.mypace.domain.permission.PermissionManager
+
 
 class AndroidPermissionManager(private val context: Context) : PermissionManager {
 
@@ -58,20 +59,7 @@ class AndroidPermissionManager(private val context: Context) : PermissionManager
         return coarse && !fine  // COARSE есть, FINE нет
     }
 
-    override fun getPreciseLocationRequiredText(): String {
-        return buildString {
-            appendLine("⚠️ Выбрана приблизительная геолокация")
-            appendLine()
-            appendLine("Для точного расчёта расстояния и темпа нужна ТОЧНАЯ геолокация.")
-            appendLine()
-            appendLine("Текущий режим «Приблизительная» дает большую погрешность:")
-            appendLine("• Расстояние может отличаться на 10-100 метров")
-            appendLine("• Темп будет прыгать")
-            appendLine("• Маршрут на карте будет неточным")
-            appendLine()
-            appendLine("Пожалуйста, выберите «Разрешить точную геолокацию» в настройках.")
-        }
-    }
+
 
     // ==================== РАЗРЕШЕНИЯ ====================
     override fun getRequiredPermissions(): Array<String> {
@@ -113,42 +101,9 @@ class AndroidPermissionManager(private val context: Context) : PermissionManager
 
     // ... остальные методы ...
 
-    override fun getPermissionRationaleText(): String {
-        return buildString {
-            appendLine("⚠️ Для записи тренировки необходимы разрешения:")
-            appendLine()
-            appendLine("📍 Геолокация — ОБЯЗАТЕЛЬНО")
-            appendLine("   • Определение маршрута и расстояния")
-            appendLine("   • Расчёт темпа и скорости")
-            appendLine()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                appendLine("🔔 Уведомления — рекомендуется")
-                appendLine("   • Показ прогресса в шторке уведомлений")
-                appendLine("   • Управление тренировкой без входа в приложение")
-                appendLine()
-            }
-            appendLine("Без геолокации тренировка не может быть записана.")
-        }
-    }
 
-    override fun getLocationDisabledText(): String {
-        return "Для записи тренировки нужно включить GPS в настройках системы.\n\n" +
-                "Без этого мы не определим ваш маршрут, расстояние и темп."
-    }
 
-    override fun getPermissionsBlockedText(): String {
-        return buildString {
-            appendLine("Доступ к разрешениям заблокирован.")
-            appendLine()
-            appendLine("Для работы приложения нужны:")
-            appendLine("• Геолокация — запись маршрута")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                appendLine("• Уведомления — показ прогресса")
-            }
-            appendLine()
-            appendLine("Включите разрешения вручную в настройках приложения.")
-        }
-    }
+
 
 
 
@@ -178,18 +133,7 @@ class AndroidPermissionManager(private val context: Context) : PermissionManager
 
     // ==================== RATIONALE ====================
 
-    override fun shouldShowRationale(activity: Activity): Boolean {
-        return getRequiredPermissions().any {
-            ActivityCompat.shouldShowRequestPermissionRationale(activity, it)
-        }
-    }
 
-    override fun shouldShowFineLocationRationale(activity: Activity): Boolean {
-        return ActivityCompat.shouldShowRequestPermissionRationale(
-            activity,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        )
-    }
 
 
 
@@ -230,10 +174,7 @@ class AndroidPermissionManager(private val context: Context) : PermissionManager
 
     // ==================== СОСТОЯНИЕ ДИАЛОГОВ ====================
 
-    override fun shouldExplainBeforeRequest(activity: Activity): Boolean {
-        if (prefs.getBoolean(KEY_RATIONALE_SHOWN, false)) return false
-        return shouldShowRationale(activity)
-    }
+
 
     override fun markRationaleShown() {
         prefs.edit().putBoolean(KEY_RATIONALE_SHOWN, true).apply()

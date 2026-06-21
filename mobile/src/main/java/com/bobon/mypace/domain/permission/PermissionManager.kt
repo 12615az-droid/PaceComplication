@@ -1,6 +1,6 @@
-package com.bobon.mypace.device.permission
+package com.bobon.mypace.domain.permission
 
-import android.app.Activity
+
 
 interface PermissionManager {
     fun getRequiredPermissions(): Array<String>
@@ -14,20 +14,15 @@ interface PermissionManager {
     fun hasNotifications(): Boolean
     fun isLocationEnabled(): Boolean
 
-    fun shouldShowRationale(activity: Activity): Boolean
-    fun shouldShowFineLocationRationale(activity: Activity): Boolean
     fun shouldGoToSettings(): Boolean
-    fun shouldExplainBeforeRequest(activity: Activity): Boolean
+
 
     fun markRationaleShown()
     fun incrementDenyCount()
     fun openAppSettings()
     fun openLocationSettings()
 
-    fun getPermissionRationaleText(): String
-    fun getLocationDisabledText(): String
-    fun getPermissionsBlockedText(): String
-    fun getPreciseLocationRequiredText(): String
+
 
     fun resetState()
 }

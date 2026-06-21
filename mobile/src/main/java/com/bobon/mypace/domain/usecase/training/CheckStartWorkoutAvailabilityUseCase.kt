@@ -1,6 +1,6 @@
 package com.bobon.mypace.domain.usecase.training
 
-import com.bobon.mypace.device.permission.PermissionManager
+import com.bobon.mypace.domain.permission.PermissionManager
 
 class CheckStartWorkoutAvailabilityUseCase(
     private val permissionManager: PermissionManager

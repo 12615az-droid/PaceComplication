@@ -1,16 +1,20 @@
 package com.bobon.mypace.ui.trainingSetup
 
-import android.app.Activity
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bobon.mypace.device.permission.PermissionManager
-import com.bobon.mypace.domain.permission.PermissionResult
-import com.bobon.mypace.domain.training.TrainingManager
+import com.bobon.mypace.domain.usecase.training.ObserveActivityModeUseCase
 import com.bobon.mypace.domain.usecase.training.ChangeTrainingModeUseCase
 import com.bobon.mypace.domain.usecase.training.CheckStartWorkoutAvailabilityUseCase
 import com.bobon.mypace.domain.usecase.training.StartTrainingUseCase
 import com.bobon.mypace.domain.usecase.training.StartWorkoutAvailability
 import com.bobon.mypace.domain.session.SessionIdGenerator
+import com.bobon.mypace.domain.usecase.permission.GetRequiredPermissionsUseCase
+import com.bobon.mypace.domain.usecase.permission.HandlePermissionResultUseCase
+import com.bobon.mypace.domain.usecase.permission.IsLocationEnabledUseCase
+import com.bobon.mypace.domain.usecase.permission.MarkPermissionRationaleShownUseCase
+import com.bobon.mypace.domain.usecase.permission.PermissionRequestResult
+import com.bobon.mypace.domain.usecase.permission.ShouldGoToSettingsUseCase
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -18,66 +22,58 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class TrainingSetupViewModel(
-    private val trainingManager: TrainingManager,
+    observeActivityMode: ObserveActivityModeUseCase,
     private val changeTrainingMode: ChangeTrainingModeUseCase,
-    private val permissionManager: PermissionManager,
+    private val handlePermissionResult: HandlePermissionResultUseCase,
+    private val getRequiredPermissionsUseCase: GetRequiredPermissionsUseCase,
+    private val markPermissionRationaleShown: MarkPermissionRationaleShownUseCase,
     private val checkStartWorkoutAvailability: CheckStartWorkoutAvailabilityUseCase,
-    private val startTraining: StartTrainingUseCase
+    private val startTraining: StartTrainingUseCase,
+    private val shouldGoToSettings: ShouldGoToSettingsUseCase,
+    private val isLocationEnabled: IsLocationEnabledUseCase,
 ) : ViewModel() {
 
-    val activityMode = trainingManager.activityMode
 
-    private val _isGoalSetupOpen = MutableStateFlow(false)
-    val isGoalSetupOpen = _isGoalSetupOpen.asStateFlow()
 
-    private val _permissionEvent = MutableSharedFlow<PermissionResult>()
-    val permissionEvent = _permissionEvent.asSharedFlow()
 
-    private val _showRationaleDialog = MutableStateFlow(false)
-    val showRationaleDialog = _showRationaleDialog.asStateFlow()
+    val activityMode = observeActivityMode()
 
-    private val _showSettingsDialog = MutableStateFlow(false)
-    val showSettingsDialog = _showSettingsDialog.asStateFlow()
+    private val _activeDialog = MutableStateFlow<TrainingSetupDialog?>(null)
+    val activeDialog = _activeDialog.asStateFlow()
 
-    private val _showLocationServicesDialog = MutableStateFlow(false)
-    val showLocationServicesDialog = _showLocationServicesDialog.asStateFlow()
 
-    private val _showRetryDialog = MutableStateFlow(false)
-    val showRetryDialog = _showRetryDialog.asStateFlow()
-
-    private val _showPreciseLocationDialog = MutableStateFlow(false)
-    val showPreciseLocationDialog = _showPreciseLocationDialog.asStateFlow()
-
-    private val _launchPermissionRequest = MutableStateFlow(false)
-    val launchPermissionRequest = _launchPermissionRequest.asStateFlow()
 
     private val _snackbarMessage = MutableSharedFlow<String>()
     val snackbarMessage = _snackbarMessage.asSharedFlow()
 
+
+    private val _effect = MutableSharedFlow<TrainingSetupEffect>()
+    val effect = _effect.asSharedFlow()
     fun changeMode() {
         changeTrainingMode()
     }
 
     fun openGoalSetupDialog() {
-        _isGoalSetupOpen.value = true
+        _activeDialog.value = TrainingSetupDialog.GoalSetup
     }
 
-    fun closeGoalSetupDialog() {
-        _isGoalSetupOpen.value = false
+
+    fun dismissDialog() {
+        _activeDialog.value = null
     }
 
-    fun onStartClick(activity: Activity) {
+    fun onStartClick(shouldShowRationale: Boolean) {
         when (checkStartWorkoutAvailability()) {
             StartWorkoutAvailability.NoLocationPermission -> {
-                handlePermissionsCheck(activity)
+                handlePermissionsCheck(shouldShowRationale)
             }
 
             StartWorkoutAvailability.OnlyCoarseLocation -> {
-                _showPreciseLocationDialog.value = true
+                _activeDialog.value = TrainingSetupDialog.PreciseLocationRequired
             }
 
             StartWorkoutAvailability.LocationDisabled -> {
-                _showLocationServicesDialog.value = true
+                _activeDialog.value = TrainingSetupDialog.LocationDisabled
             }
 
             StartWorkoutAvailability.Available -> {
@@ -93,119 +89,95 @@ class TrainingSetupViewModel(
         }
     }
 
-    private fun handlePermissionsCheck(activity: Activity) {
+    private fun handlePermissionsCheck(shouldShowRationale: Boolean) {
         when {
-            permissionManager.shouldGoToSettings() -> {
-                _showSettingsDialog.value = true
+            shouldGoToSettings() -> {
+                _activeDialog.value = TrainingSetupDialog.PermissionSettings
             }
 
-            permissionManager.shouldExplainBeforeRequest(activity) -> {
-                _showRationaleDialog.value = true
+            shouldShowRationale -> {
+                _activeDialog.value = TrainingSetupDialog.PermissionRationale
             }
 
             else -> {
-                _launchPermissionRequest.value = true
+                requestLocationPermission()
             }
         }
     }
 
+    private fun requestLocationPermission() {
+        viewModelScope.launch {
+            _effect.emit(TrainingSetupEffect.RequestLocationPermission)
+        }
+    }
+
     fun onPermissionResult(
-        activity: Activity,
-        permissions: Map<String, Boolean>
+        shouldShowFineLocationRationale: Boolean
     ) {
-        when {
-            permissionManager.hasAllPermissions() -> {
+        when (handlePermissionResult(shouldShowFineLocationRationale)) {
+            PermissionRequestResult.Granted -> {
                 checkLocationServices()
             }
 
-            permissionManager.shouldShowFineLocationRationale(activity) -> {
-                permissionManager.incrementDenyCount()
-                _showRetryDialog.value = true
+            PermissionRequestResult.ShowRetryDialog -> {
+                _activeDialog.value = TrainingSetupDialog.PermissionRetry
             }
 
-            else -> {
-                permissionManager.incrementDenyCount()
-                _showSettingsDialog.value = true
+            PermissionRequestResult.ShowSettingsDialog -> {
+                _activeDialog.value = TrainingSetupDialog.PermissionSettings
             }
         }
     }
 
     private fun checkLocationServices() {
-        if (!permissionManager.isLocationEnabled()) {
-            _showLocationServicesDialog.value = true
+        if (!isLocationEnabled()) {
+            _activeDialog.value = TrainingSetupDialog.LocationDisabled
         } else {
             startTracking()
         }
     }
 
     fun getRequiredPermissions(): Array<String> =
-        permissionManager.getRequiredPermissions()
+        getRequiredPermissionsUseCase()
 
-    fun getPermissionRationaleText(): String =
-        permissionManager.getPermissionRationaleText()
 
-    fun getLocationDisabledText(): String =
-        permissionManager.getLocationDisabledText()
 
-    fun getPermissionsBlockedText(): String =
-        permissionManager.getPermissionsBlockedText()
-
-    fun getPreciseLocationRequiredText(): String =
-        permissionManager.getPreciseLocationRequiredText()
-
-    fun onPermissionRequestLaunched() {
-        _launchPermissionRequest.value = false
-    }
 
     fun onRationaleConfirm() {
-        _showRationaleDialog.value = false
-        permissionManager.markRationaleShown()
+        _activeDialog.value = null
+        markPermissionRationaleShown()
+        requestLocationPermission()
     }
 
     fun onOpenSettings() {
-        _showSettingsDialog.value = false
-        permissionManager.openAppSettings()
+        _activeDialog.value = null
+
+        viewModelScope.launch {
+            _effect.emit(TrainingSetupEffect.OpenAppSettings)
+        }
     }
 
     fun onOpenLocationSettings() {
-        _showLocationServicesDialog.value = false
-        permissionManager.openLocationSettings()
+        _activeDialog.value = null
+
+        viewModelScope.launch {
+            _effect.emit(TrainingSetupEffect.OpenLocationSettings)
+        }
     }
 
     fun onOpenAppSettingsForPrecise() {
-        _showPreciseLocationDialog.value = false
-        permissionManager.openAppSettings()
+        _activeDialog.value = null
+
+        viewModelScope.launch {
+            _effect.emit(TrainingSetupEffect.OpenAppSettings)
+        }
     }
 
-    fun onRetryRequest() {
-        _showRetryDialog.value = false
-    }
 
-    fun onDismissRationaleDialog() {
-        _showRationaleDialog.value = false
-    }
-
-    fun onDismissSettingsDialog() {
-        _showSettingsDialog.value = false
-    }
-
-    fun onDismissLocationDialog() {
-        _showLocationServicesDialog.value = false
-    }
-
-    fun onDismissRetryDialog() {
-        _showRetryDialog.value = false
-    }
 
     fun onDismissPreciseLocationDialog() {
-        _showPreciseLocationDialog.value = false
+        _activeDialog.value = null
     }
 
-    fun dismissDialogs() {
-        _showRationaleDialog.value = false
-        _showSettingsDialog.value = false
-        _showLocationServicesDialog.value = false
-        _showRetryDialog.value = false
-        _showPreciseLocationDialog.value = false
-    }
+
 }

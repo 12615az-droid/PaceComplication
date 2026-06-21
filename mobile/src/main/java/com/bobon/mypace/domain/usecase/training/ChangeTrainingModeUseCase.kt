@@ -1,11 +1,13 @@
 package com.bobon.mypace.domain.usecase.training
 
-import com.bobon.mypace.domain.training.TrainingManager
+
+import com.bobon.mypace.domain.training.TrainingCommandController
+
 
 class ChangeTrainingModeUseCase(
-    private val trainingManager: TrainingManager
+    private val trainingCommandController: TrainingCommandController
 ) {
     operator fun invoke() {
-        trainingManager.changeMode()
+        trainingCommandController.changeMode()
     }
 }
