@@ -5,7 +5,7 @@ import com.bobon.mypace.domain.model.WorkoutState
 
 interface TrainingSyncSender {
     fun sendWorkoutUpdate(
-        paceText: String,
+        paceSecondsPerKm: Double?,
         workoutState: WorkoutState
     )
 }

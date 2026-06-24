@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.asStateFlow
 
 class TrainingStateHolder {
 
-    private val _currentPace = MutableStateFlow("0:00")
-    val currentPace = _currentPace.asStateFlow()
+    private val _currentPaceSecondsPerKm = MutableStateFlow<Double?>(null)
+    val currentPaceSecondsPerKm = _currentPaceSecondsPerKm.asStateFlow()
 
     private val _workoutState = MutableStateFlow(WorkoutState.IDLE)
     val workoutState = _workoutState.asStateFlow()
@@ -29,8 +29,8 @@ class TrainingStateHolder {
     private val _startTime = MutableStateFlow<Long?>(null)
     val startTime = _startTime.asStateFlow()
 
-    fun setCurrentPace(value: String) {
-        _currentPace.value = value
+    fun setCurrentPaceSecondsPerKm(value: Double) {
+        _currentPaceSecondsPerKm.value = value
     }
 
     fun setWorkoutState(value: WorkoutState) {
@@ -62,7 +62,7 @@ class TrainingStateHolder {
     }
 
     fun reset() {
-        _currentPace.value = "0:00"
+        _currentPaceSecondsPerKm.value = null
         _workoutState.value = WorkoutState.IDLE
         _activityMode.value = RunningMode
         _totalDistance.value = 0.0

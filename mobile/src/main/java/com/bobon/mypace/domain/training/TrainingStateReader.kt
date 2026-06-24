@@ -5,7 +5,7 @@ import com.bobon.mypace.domain.training.modes.TrainingMode
 import kotlinx.coroutines.flow.StateFlow
 
 interface TrainingStateReader {
-    val currentPace: StateFlow<String>
+    val currentPaceSecondsPerKm: StateFlow<Double?>
     val workoutState: StateFlow<WorkoutState>
     val activityMode: StateFlow<TrainingMode>
     val totalDistance: StateFlow<Double>

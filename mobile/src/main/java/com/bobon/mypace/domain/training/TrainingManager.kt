@@ -1,6 +1,5 @@
 package com.bobon.mypace.domain.training
 
-import com.bobon.mypace.core.formatter.PaceFormatter
 import com.bobon.mypace.domain.model.WorkoutState
 import com.bobon.mypace.domain.training.modes.TrainingModes
 import com.bobon.mypace.domain.pace.PaceUpdate
@@ -17,7 +16,7 @@ class TrainingManager(
     private val trainingSyncSender: TrainingSyncSender,
     private val clockProvider: ClockProvider
 ) : ActiveTrainingSession  {
-    override val currentPace = stateHolder.currentPace
+    override val currentPaceSecondsPerKm = stateHolder.currentPaceSecondsPerKm
     override val workoutState = stateHolder.workoutState
     override val activityMode = stateHolder.activityMode
     override val totalDistance = stateHolder.totalDistance
@@ -56,8 +55,8 @@ class TrainingManager(
         ) ?: return null
 
         stateHolder.setGpsAccuracy(update.gpsAccuracyMeters)
-        stateHolder.setCurrentPace(
-            PaceFormatter.formatPace(update.paceUpdate.secondsPerKm)
+        stateHolder.setCurrentPaceSecondsPerKm(
+            update.paceUpdate.secondsPerKm
         )
         stateHolder.addDistance(update.distanceDeltaMeters)
 
@@ -78,7 +77,7 @@ class TrainingManager(
 
     private fun syncTrainingState() {
         trainingSyncSender.sendWorkoutUpdate(
-            paceText = currentPace.value,
+            paceSecondsPerKm = currentPaceSecondsPerKm.value,
             workoutState = workoutState.value
         )
     }

@@ -29,7 +29,7 @@ class LocationUpdateHandler(
         )
 
         return LocationUpdateResult(
-            paceText = trainingStateReader.currentPace.value,
+            paceSecondsPerKm = trainingStateReader.currentPaceSecondsPerKm.value,
             accuracyMeters = location.accuracy
         )
     }

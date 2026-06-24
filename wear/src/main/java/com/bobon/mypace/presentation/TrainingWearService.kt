@@ -17,11 +17,14 @@ class TrainingWearService : Service() {
 
 
     companion object {
+        const val ACTION_START = "START"
+        const val ACTION_STOP = "STOP"
+        const val ACTION_KILL = "KILL"
+
         private const val TAG = "TRAINING_WEAR_SERVICE"
         private const val NOTIFICATION_ID = 101
         private const val CHANNEL_ID = "sync_channel"
     }
-
 
     override fun onCreate() {
         super.onCreate()
@@ -35,7 +38,7 @@ class TrainingWearService : Service() {
         Log.d(TAG, "onStartCommand: action=$action, startId=$startId")
 
         when (action) {
-            "START" -> {
+            ACTION_START -> {
                 Log.d(TAG, "START: starting foreground with Ongoing Activity")
 
                 val notificationIntent = Intent(this, MainActivity::class.java)
@@ -81,12 +84,12 @@ class TrainingWearService : Service() {
                 startHeartRateMonitoring()
             }
 
-            "STOP" -> {
+            ACTION_STOP -> {
                 Log.d(TAG, "STOP: updating notification to paused")
                 updateNotificationPaused()
             }
 
-            "KILL" -> {
+            ACTION_KILL -> {
                 Log.d(TAG, "KILL: stopping foreground and self")
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()

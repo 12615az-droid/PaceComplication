@@ -7,7 +7,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
-import com.bobon.mypace.core.logger.TypeEvent
+import com.bobon.mypace.core.formatter.PaceFormatter
 
 import com.bobon.mypace.device.location.LocationUpdateHandler
 import com.bobon.mypace.device.notification.LocationNotificationHelper
@@ -116,9 +116,12 @@ class LocationService : Service() {
         locationProvider.startUpdates { location ->
             serviceScope.launch {
                 val result = locationUpdateHandler.handle(location)
+                val paceText = PaceFormatter.formatPace(
+                    result.paceSecondsPerKm ?: 0.0
+                )
 
                 updateNotification(
-                    text = result.paceText,
+                    text = paceText,
                     accuracy = result.accuracyMeters
                 )
             }

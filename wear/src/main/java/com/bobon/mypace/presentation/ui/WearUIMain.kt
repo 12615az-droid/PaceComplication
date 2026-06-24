@@ -5,16 +5,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.bobon.mypace.presentation.PaceRepository
-
+import com.bobon.mypace.presentation.model.WearWorkoutState
 
 @Composable
 fun WearUiMain() {
+    val state by PaceRepository.state.collectAsState()
 
-    val workoutState by PaceRepository.workoutState.collectAsState()
+    when (state.workoutState) {
+        WearWorkoutState.Idle,
+        WearWorkoutState.Finished -> {
+            MainMenuScreen({})
+        }
 
-    if (workoutState == 0) MainMenuScreen({})
-    if (workoutState == 1) TrainingScreen({})
-
+        WearWorkoutState.Active,
+        WearWorkoutState.Paused -> {
+            TrainingScreen({})
+        }
+    }
 }
-
-

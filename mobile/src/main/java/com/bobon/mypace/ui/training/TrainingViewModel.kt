@@ -2,6 +2,7 @@ package com.bobon.mypace.ui.training
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bobon.mypace.core.formatter.PaceFormatter
 import com.bobon.mypace.domain.model.WorkoutState
 import com.bobon.mypace.domain.usecase.training.ObserveTrainingStateUseCase
 import com.bobon.mypace.domain.usecase.training.ContinueTrainingUseCase
@@ -22,7 +23,7 @@ class TrainingViewModel(
     val uiState = observeTrainingState()
         .map { state ->
             TrainingUiState(
-                paceText = state.paceText,
+                paceText = PaceFormatter.formatPace(state.paceSecondsPerKm ?: 0.0),
                 gpsAccuracyMeters = state.gpsAccuracyMeters,
                 trainingTimeMs = state.trainingTimeMs,
                 activityModeLabel = state.activityMode.label,

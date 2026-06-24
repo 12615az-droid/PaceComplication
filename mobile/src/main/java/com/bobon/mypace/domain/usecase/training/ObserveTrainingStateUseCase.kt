@@ -12,13 +12,13 @@ class ObserveTrainingStateUseCase(
 ) {
     operator fun invoke(): Flow<TrainingSnapshot> {
         val metrics = combine(
-            trainingStateReader.currentPace,
+            trainingStateReader.currentPaceSecondsPerKm,
             trainingStateReader.currentGPSAccuracy,
             trainingStateReader.trainingTimeMs,
             trainingStateReader.totalDistance
-        ) { paceText, gpsAccuracy, trainingTimeMs, totalDistance ->
+        ) { paceSecondsPerKm, gpsAccuracy, trainingTimeMs, totalDistance ->
             TrainingMetrics(
-                paceText = paceText,
+                paceSecondsPerKm = paceSecondsPerKm,
                 gpsAccuracyMeters = gpsAccuracy,
                 trainingTimeMs = trainingTimeMs,
                 totalDistanceMeters = totalDistance
@@ -37,7 +37,7 @@ class ObserveTrainingStateUseCase(
 
         return combine(metrics, modeState) { metricsState, mode ->
             TrainingSnapshot(
-                paceText = metricsState.paceText,
+                paceSecondsPerKm = metricsState.paceSecondsPerKm,
                 gpsAccuracyMeters = metricsState.gpsAccuracyMeters,
                 trainingTimeMs = metricsState.trainingTimeMs,
                 totalDistanceMeters = metricsState.totalDistanceMeters,
@@ -48,7 +48,7 @@ class ObserveTrainingStateUseCase(
     }
 
     private data class TrainingMetrics(
-        val paceText: String,
+        val paceSecondsPerKm: Double?,
         val gpsAccuracyMeters: Float,
         val trainingTimeMs: Long,
         val totalDistanceMeters: Double

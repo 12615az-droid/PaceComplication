@@ -27,8 +27,8 @@ import com.bobon.mypace.presentation.ui.theme.PaceComplicationTheme
 
 @Composable
 fun TrainingScreen(onStopClick: () -> Unit = {}) {
+    val state by PaceRepository.state.collectAsState()
 
-    val pace by PaceRepository.currentPace.collectAsState()
     PaceComplicationTheme {
         Box(
             modifier = Modifier
@@ -37,9 +37,8 @@ fun TrainingScreen(onStopClick: () -> Unit = {}) {
             contentAlignment = Alignment.Center
         ) {
             TimeText()
-            Greeting(pace)
+            Greeting(state.paceText)
             Spacer(Modifier.height(2.dp))
-
         }
     }
 }

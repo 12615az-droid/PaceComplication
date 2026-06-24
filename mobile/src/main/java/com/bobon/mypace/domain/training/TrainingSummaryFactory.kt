@@ -18,19 +18,20 @@ class TrainingSummaryFactory(
         val id = sessionId ?: return null
         val start = startTime ?: return null
         val end = clockProvider.currentTimeMillis()
-
-        val avgSpeed = if (trainingTimeMs > 0) {
-            totalDistanceMeters / (trainingTimeMs / 3_600_000.0)
-        } else {
-            0.0
-        }
+        val durationHours = trainingTimeMs / 3_600_000.0
+        val avgSpeedMetersPerHour =
+            if (durationHours > 0.0) {
+                totalDistanceMeters / durationHours
+            } else {
+                0.0
+            }
 
         return Workout(
             id = id,
             startTime = start,
             endTime = end,
             totalDistance = totalDistanceMeters,
-            avgSpeed = avgSpeed,
+            avgSpeed = avgSpeedMetersPerHour,
             caloriesBurned = 0,
             activityType = activityMode.id,
             note = note
