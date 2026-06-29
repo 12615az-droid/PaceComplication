@@ -27,10 +27,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.bobon.mypace.domain.model.TotalStats
 
 
-/**
- * Модель данных для истории тренировок
- */
-
 
 
 

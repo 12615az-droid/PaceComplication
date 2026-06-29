@@ -1,4 +1,4 @@
-package com.bobon.mypace.core.logger
+package com.bobon.mypace.logger
 
 import android.content.Context
 import java.io.File

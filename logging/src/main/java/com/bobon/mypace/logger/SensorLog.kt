@@ -1,4 +1,4 @@
-package com.bobon.mypace.core.logger
+package com.bobon.mypace.logger
 
 import com.bobon.mypace.core.sensor.SensorData
 import kotlinx.coroutines.sync.Mutex

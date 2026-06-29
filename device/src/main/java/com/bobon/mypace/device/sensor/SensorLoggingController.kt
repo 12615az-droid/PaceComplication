@@ -1,7 +1,7 @@
 package com.bobon.mypace.device.sensor
 
 
-import com.bobon.mypace.core.logger.SensorLog
+import com.bobon.mypace.logger.SensorLog
 import com.bobon.mypace.domain.training.TrainingStateReader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job

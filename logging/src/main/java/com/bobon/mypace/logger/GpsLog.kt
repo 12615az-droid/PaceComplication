@@ -1,9 +1,10 @@
-package com.bobon.mypace.core.logger
+package com.bobon.mypace.logger
 
 import com.bobon.mypace.domain.model.WorkoutState
 import com.bobon.mypace.domain.training.modes.TrainingMode
 import com.bobon.mypace.domain.pace.PaceUpdate
 import com.bobon.mypace.core.formatter.PaceFormatter
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -13,7 +14,8 @@ import kotlinx.serialization.json.Json
 private data class ProcessedGpsData(
     val paceText: String? = null,
     val paceSecPerKm: Double? = null,
-    val workoutState: WorkoutState,
+    @SerialName("workoutStateCode")
+    val workoutStateCode: Int,
     val totalDistance: Double,
     val mode: String,
 )
@@ -54,7 +56,7 @@ class GPSLog(
             processed = ProcessedGpsData(
                 paceText = paceUpdate?.let { PaceFormatter.formatPace(it.secondsPerKm) },
                 paceSecPerKm = paceUpdate?.secondsPerKm,
-                workoutState = workoutState,
+                workoutStateCode = workoutState.code,
                 totalDistance = totalDistance,
                 mode = mode.label
             )

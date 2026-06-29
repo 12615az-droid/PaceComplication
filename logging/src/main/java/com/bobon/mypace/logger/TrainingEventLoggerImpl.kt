@@ -1,4 +1,4 @@
-package com.bobon.mypace.core.logger
+package com.bobon.mypace.logger
 
 
 import com.bobon.mypace.domain.logging.TrainingEventLogger
@@ -20,7 +20,7 @@ class TrainingEventLoggerImpl(
             sessionId = sessionId,
             data = AppEventData(
                 screen = screenName,
-                workoutState = workoutState,
+                workoutStateCode = workoutState.code,
                 note = "Screen changed"
             )
         )

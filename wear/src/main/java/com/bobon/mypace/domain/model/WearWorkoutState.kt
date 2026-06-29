@@ -1,4 +1,4 @@
-package com.bobon.mypace.presentation.model
+package com.bobon.mypace.domain.model
 
 enum class WearWorkoutState(val code: Int) {
     Idle(0),

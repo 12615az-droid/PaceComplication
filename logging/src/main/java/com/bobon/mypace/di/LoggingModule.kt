@@ -1,12 +1,12 @@
 package com.bobon.mypace.di
 
-import com.bobon.mypace.core.logger.EventsLog
-import com.bobon.mypace.core.logger.GPSLog
-import com.bobon.mypace.core.logger.JsonlFileWriter
-import com.bobon.mypace.core.logger.LogFilesManager
-import com.bobon.mypace.core.logger.SensorLog
-import com.bobon.mypace.core.logger.StateLogStorage
-import com.bobon.mypace.core.logger.TrainingEventLoggerImpl
+import com.bobon.mypace.logger.EventsLog
+import com.bobon.mypace.logger.GPSLog
+import com.bobon.mypace.logger.JsonlFileWriter
+import com.bobon.mypace.logger.LogFilesManager
+import com.bobon.mypace.logger.SensorLog
+import com.bobon.mypace.logger.StateLogStorage
+import com.bobon.mypace.logger.TrainingEventLoggerImpl
 import com.bobon.mypace.domain.logging.TrainingEventLogger
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module

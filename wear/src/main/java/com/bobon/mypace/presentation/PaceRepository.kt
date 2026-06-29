@@ -1,6 +1,6 @@
 package com.bobon.mypace.presentation
 
-import com.bobon.mypace.presentation.model.WearTrainingState
+import com.bobon.mypace.domain.model.WearTrainingState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

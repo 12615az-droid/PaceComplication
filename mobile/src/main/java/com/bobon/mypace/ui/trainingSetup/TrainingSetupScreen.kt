@@ -356,15 +356,12 @@ fun ModeSelector(
     ) {
         options.forEachIndexed { index, label ->
 
-            // Выбрана ли именно эта кнопка:
-            // index 0 => "БЕГ"  (isWalking = false)
-            // index 1 => "ХОДЬБА" (isWalking = true)
+
             val isThisSelected = (index == 1 && isWalking) || (index == 0 && !isWalking)
 
             SegmentedButton(
                 shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
                 onClick = {
-                    // Важно: клики по уже выбранной кнопке игнорируем
                     if (!isThisSelected) onModeChanged()
                 },
                 selected = isThisSelected,

@@ -1,8 +1,7 @@
 package com.bobon.mypace.presentation
 
-import android.content.Intent
 import android.util.Log
-import com.bobon.mypace.presentation.sync.WearWorkoutSyncHandler
+import com.bobon.mypace.device.sync.WearWorkoutSyncHandler
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem

@@ -50,7 +50,7 @@ class LocationService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (val action = intent?.action) {
-            "START" -> {
+            TrainingServiceActions.START -> {
                 sensorLoggingController.start(serviceScope)
 
                 val notification = notificationHelper.getNotification("0:00", 0f)
@@ -75,7 +75,7 @@ class LocationService : Service() {
                 }
             }
 
-            "STOP" -> {
+            TrainingServiceActions.STOP -> {
                 sensorLoggingController.stop(serviceScope)
                 stopLocationUpdates()
 
@@ -86,7 +86,7 @@ class LocationService : Service() {
                 }
             }
 
-            "KILL" -> {
+            TrainingServiceActions.KILL -> {
                 stopLocationUpdates()
                 sensorLoggingController.stop(serviceScope)
                 stopForeground(STOP_FOREGROUND_REMOVE)

@@ -81,10 +81,10 @@ class LocationNotificationHelper(private val context: Context) {
         val pendingIntent = createOpenAppPendingIntent()
 
         val colorArgb = when {
-            accuracy <= 0f -> 0xFF888888.toInt()  // Аналог Compose Color.Gray
-            accuracy <= 8f -> 0xFF00FF00.toInt()  // Аналог Compose Color.Green
-            accuracy <= 20f -> 0xFFFFC107.toInt() // Твой кастомный желтый
-            else -> 0xFFFF0000.toInt()            // Аналог Compose Color.Red
+            accuracy <= 0f -> 0xFF888888.toInt()
+            accuracy <= 8f -> 0xFF00FF00.toInt()
+            accuracy <= 20f -> 0xFFFFC107.toInt()
+            else -> 0xFFFF0000.toInt()
         }
 
         // 2. ГЕНЕРИРУЕМ "ОБЛОЖКУ"

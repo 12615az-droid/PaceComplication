@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.bobon.mypace.presentation.PaceRepository
-import com.bobon.mypace.presentation.model.WearWorkoutState
+import com.bobon.mypace.domain.model.WearWorkoutState
 
 @Composable
 fun WearUiMain() {

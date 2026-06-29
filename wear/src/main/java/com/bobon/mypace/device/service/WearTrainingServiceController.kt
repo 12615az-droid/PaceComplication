@@ -1,10 +1,10 @@
-package com.bobon.mypace.presentation.service
+package com.bobon.mypace.device.service
 
 import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.bobon.mypace.presentation.TrainingWearService
-import com.bobon.mypace.presentation.model.WearWorkoutState
+import com.bobon.mypace.domain.model.WearWorkoutState
 
 object WearTrainingServiceController {
 

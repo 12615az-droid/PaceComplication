@@ -11,21 +11,21 @@ class AndroidTrainingServiceController(
 
     override fun startTrackingService() {
         val intent = Intent(context, LocationService::class.java).apply {
-            action = "START"
+            action = TrainingServiceActions.START
         }
         context.startForegroundService(intent)
     }
 
     override fun stopTrackingService() {
         val intent = Intent(context, LocationService::class.java).apply {
-            action = "STOP"
+            action = TrainingServiceActions.STOP
         }
         context.startForegroundService(intent)
     }
 
     override fun killTrackingService() {
         val intent = Intent(context, LocationService::class.java).apply {
-            action = "KILL"
+            action = TrainingServiceActions.KILL
         }
         context.startForegroundService(intent)
     }

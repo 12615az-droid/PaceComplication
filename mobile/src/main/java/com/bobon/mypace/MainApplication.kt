@@ -2,11 +2,11 @@ package com.bobon.mypace
 
 import android.app.Application
 import com.bobon.mypace.di.appModules
-import com.bobon.mypace.core.logger.AppEventData
-import com.bobon.mypace.core.logger.EventsLog
-import com.bobon.mypace.core.logger.LogFilesManager
-import com.bobon.mypace.core.logger.SourceEvent
-import com.bobon.mypace.core.logger.TypeEvent
+import com.bobon.mypace.logger.AppEventData
+import com.bobon.mypace.logger.EventsLog
+import com.bobon.mypace.logger.LogFilesManager
+import com.bobon.mypace.logger.SourceEvent
+import com.bobon.mypace.logger.TypeEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

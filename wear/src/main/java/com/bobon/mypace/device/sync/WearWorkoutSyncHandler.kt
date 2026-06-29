@@ -1,11 +1,11 @@
-package com.bobon.mypace.presentation.sync
+package com.bobon.mypace.device.sync
 
 import android.content.Context
 import android.util.Log
 import com.bobon.mypace.presentation.PaceRepository
-import com.bobon.mypace.presentation.model.WearTrainingState
-import com.bobon.mypace.presentation.model.WearWorkoutState
-import com.bobon.mypace.presentation.service.WearTrainingServiceController
+import com.bobon.mypace.domain.model.WearTrainingState
+import com.bobon.mypace.domain.model.WearWorkoutState
+import com.bobon.mypace.device.service.WearTrainingServiceController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

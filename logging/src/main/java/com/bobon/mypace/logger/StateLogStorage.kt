@@ -1,4 +1,4 @@
-package com.bobon.mypace.core.logger
+package com.bobon.mypace.logger
 
 class StateLogStorage(
     private val files: LogFilesManager,

@@ -51,7 +51,7 @@ class TrainingWearService : Service() {
                 val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
                     .setContentTitle("Тренировка активна")
                     .setContentText("Синхронизация...")
-                    .setSmallIcon(R.drawable.ic_launcher_foreground) // Твоя иконка для строки состояния
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
                     .setOngoing(true)
                     .setCategory(NotificationCompat.CATEGORY_WORKOUT)
                     .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)

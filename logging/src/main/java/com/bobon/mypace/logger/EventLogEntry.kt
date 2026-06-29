@@ -1,7 +1,8 @@
-package com.bobon.mypace.core.logger
+package com.bobon.mypace.logger
 
-import com.bobon.mypace.core.logger.LogJson.json
+import com.bobon.mypace.logger.LogJson.json
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 
 @Serializable
 data class EventLogEntry(
@@ -14,4 +15,4 @@ data class EventLogEntry(
 )
 
 fun toJsonLine(entry: EventLogEntry): String =
-    json.encodeToString(EventLogEntry.serializer(), entry)
+    json.encodeToString(entry)

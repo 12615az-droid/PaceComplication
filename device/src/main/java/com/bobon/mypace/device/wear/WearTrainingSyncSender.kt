@@ -17,7 +17,7 @@ class WearTrainingSyncSender(
         )
         wearDataSender.sendWorkoutUpdate(
             paceString = paceText,
-            workoutState = workoutState.toWearState()
+            workoutState = workoutState.code
         )
     }
 }

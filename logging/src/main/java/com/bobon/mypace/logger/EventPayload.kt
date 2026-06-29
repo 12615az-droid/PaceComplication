@@ -1,6 +1,5 @@
-package com.bobon.mypace.core.logger
+package com.bobon.mypace.logger
 
-import com.bobon.mypace.domain.model.WorkoutState
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -11,7 +10,8 @@ sealed interface EventPayload
 @SerialName("app")
 data class AppEventData(
     val screen: String? = null,
-    val workoutState: WorkoutState? = null,
+    @SerialName("workoutStateCode")
+    val workoutStateCode: Int? = null,
     val permission: String? = null,
     val granted: Boolean? = null,
     val errorMessage: String? = null,
@@ -22,7 +22,8 @@ data class AppEventData(
 @Serializable
 @SerialName("session")
 data class SessionEventData(
-    val workoutState: WorkoutState,
+    @SerialName("workoutStateCode")
+    val workoutStateCode: Int,
     val activityMode: String,
     val paceText: String? = null,
     val trainingTimeMs: Long? = null,

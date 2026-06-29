@@ -1,4 +1,4 @@
-package com.bobon.mypace.core.logger
+package com.bobon.mypace.logger
 
 import kotlinx.serialization.json.Json
 

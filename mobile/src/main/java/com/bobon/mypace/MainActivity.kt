@@ -12,32 +12,17 @@ import com.bobon.mypace.ui.main.PaceScreenRoute
 import com.bobon.mypace.ui.theme.RunningAppTheme
 
 
-/**
- * MainActivity — точка входа приложения.
- *
- * Ответственность Activity:
- * - запрос runtime-разрешений (геолокация + уведомления на Android 13+)
- * - запуск/остановка фонового сервиса трекинга (LocationService)
- * - установка Compose UI (Theme -> Surface -> PaceScreen)
- *
- * Важно:
- * - бизнес-состояние трекинга хранится в LocationRepository
- * - UI получает события через callbacks (onStart/onStop/onModeChanged)
- */
 class MainActivity : ComponentActivity() {
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Compose-дерево приложения: тема -> контейнер -> основной экран
         setContent {
-
             RunningAppTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
 
                     PaceScreenRoute()
-
 
                 }
             }

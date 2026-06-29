@@ -1,9 +1,9 @@
 package com.bobon.mypace.device.location
 
 import android.location.Location
-import com.bobon.mypace.core.logger.GPSLog
+import com.bobon.mypace.logger.GPSLog
 import android.os.Build
-import com.bobon.mypace.core.logger.GpsRawData
+import com.bobon.mypace.logger.GpsRawData
 import com.bobon.mypace.domain.training.TrainingMetricsUpdater
 import com.bobon.mypace.domain.training.TrainingStateReader
 

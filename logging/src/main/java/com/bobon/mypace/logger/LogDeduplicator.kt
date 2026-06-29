@@ -1,8 +1,9 @@
-package com.bobon.mypace.core.logger
+package com.bobon.mypace.logger
 
-import com.bobon.mypace.core.logger.LogJson.json
+import com.bobon.mypace.logger.LogJson.json
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.encodeToString
 
 class LogDeduplicator(
     private val windowNs: Long = 1_500_000_000L,
@@ -34,7 +35,7 @@ class LogDeduplicator(
 
     private fun buildDedupKey(entry: EventLogEntry): String {
         val dataJson =
-            entry.data?.let { json.encodeToString(EventPayload.serializer(), it) } ?: "null"
+            entry.data?.let { json.encodeToString<EventPayload>(it) } ?: "null"
 
         return "${entry.type}|${entry.source}|${entry.origin}|${entry.sessionId}|$dataJson"
     }
