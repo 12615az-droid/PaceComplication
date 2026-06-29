@@ -11,6 +11,6 @@ val appModules = listOf(
     deviceTimerModule,
     deviceWearModule,
     deviceLoggingModule,
-
+    loggingModule,
     uiModule
 )

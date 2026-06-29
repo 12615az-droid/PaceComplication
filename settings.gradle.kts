@@ -23,5 +23,10 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "PaceComplication"
+include(":domain")
+include(":core")
+include(":data")
+include(":logging")
+include(":device")
 include(":mobile")
 include(":wear")
